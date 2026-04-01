@@ -2402,29 +2402,58 @@ async function doAutoSync(){
 }
 async function autoInitSync(){
   const{url,user}=getFirebaseConfig();
-  if(!url||!user) return;
   const ind=document.getElementById('autosync-indicator');
-  if(ind) ind.textContent='☁ Data ophalen...';
+  const setInd=(txt)=>{if(ind) ind.textContent=txt;};
+  setInd('☁ Data ophalen...');
   try{
     const res=await fetch(`${url}/welzijn/${user}.json`);
-    if(!res.ok) return;
+    if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
-    if(!data) return;
+    if(!data){setInd('☁ Geen data in Firebase');return;}
+
+    // Data opslaan
     if(data.gewicht&&Array.isArray(data.gewicht)) save(KEYS.gewicht,data.gewicht);
-    if(data.sport&&Array.isArray(data.sport))   save(KEYS.sport,data.sport);
-    if(data.water&&Array.isArray(data.water))   save(KEYS.water,data.water);
-    if(data.slaap&&Array.isArray(data.slaap))   save(KEYS.slaap,data.slaap);
-    if(data.meetmomenten&&Array.isArray(data.meetmomenten)) saveMM(data.meetmomenten);
+    if(data.sport&&Array.isArray(data.sport))     save(KEYS.sport,data.sport);
+    if(data.water&&Array.isArray(data.water))     save(KEYS.water,data.water);
+    if(data.slaap&&Array.isArray(data.slaap))     save(KEYS.slaap,data.slaap);
+    // Meetmomenten: kan array of object zijn
+    if(data.meetmomenten){
+      if(Array.isArray(data.meetmomenten)){
+        // oud formaat — negeer
+      } else {
+        saveMM(data.meetmomenten);
+      }
+    }
+    // Settings mergen
     if(data.settings){
       const local=loadSettings(),remote=data.settings,merged={...remote};
       ['startgewicht','doelgewicht','lengte','naam','motivatie'].forEach(k=>{if(local[k]) merged[k]=local[k];});
-      if(local.firebaseUrl) merged.firebaseUrl=local.firebaseUrl;
-      if(local.firebaseUser) merged.firebaseUser=local.firebaseUser;
+      merged.firebaseUrl=local.firebaseUrl||remote.firebaseUrl||url;
+      merged.firebaseUser=local.firebaseUser||remote.firebaseUser||user;
+      if(local.darkMode!==undefined) merged.darkMode=local.darkMode;
       saveSettingsData(merged);
     }
-    if(ind){ind.textContent='☁ Data geladen ✓';setTimeout(()=>{if(ind)ind.textContent='';},3000);}
+
+    // Alles opnieuw renderen
+    const activeTab=document.querySelector('.view.active')?.id?.replace('view-','');
     renderDashboard();
-  }catch(e){if(ind){ind.textContent='';}}
+    renderMotivatie();
+    applyVisibility();
+    if(activeTab==='gewicht') renderGewicht();
+    else if(activeTab==='sport') renderSport();
+    else if(activeTab==='water') renderWater();
+    else if(activeTab==='slaap') renderSlaap();
+    else if(activeTab==='prestaties') renderPrestaties();
+    else if(activeTab==='instellingen') renderSettings();
+
+    setInd('☁ Gesynchroniseerd ✓');
+    setTimeout(()=>setInd(''),3000);
+
+  }catch(e){
+    console.error('Firebase sync fout:',e);
+    setInd('☁ Sync fout: '+e.message);
+    setTimeout(()=>setInd(''),6000);
+  }
 }
 
 // ===== MOTIVATIE (#7) =====
