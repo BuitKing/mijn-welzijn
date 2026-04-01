@@ -1729,7 +1729,7 @@ function exportCSV(){
 }
 
 // ===== FIREBASE =====
-function getFirebaseConfig(){const s=loadSettings();return{url:(s.firebaseUrl||'').replace(/\/$/,''),user:s.firebaseUser||'user'};}
+function getFirebaseConfig(){const s=loadSettings();const url=(s.firebaseUrl||'https://mijn-welzijn-default-rtdb.europe-west1.firebasedatabase.app').replace(/\/$/,'');const user=s.firebaseUser||'Joost';return{url,user};}
 function setSyncStatus(state,msg){const el=document.getElementById('sync-status'),txt=document.getElementById('sync-status-text');if(!el)return;el.className='sync-status '+state;txt.textContent=msg;}
 function saveFirebaseConfig(){
   const s=loadSettings();
@@ -1741,7 +1741,7 @@ function saveFirebaseConfig(){
 }
 async function firebasePush(){
   saveFirebaseConfig();
-  const{url,user}=getFirebaseConfig();if(!url){alert('Voer eerst een Firebase Database URL in.');return;}
+  const{url,user}=getFirebaseConfig();
   setSyncStatus('idle','Uploaden...');
   try{
     const payload={
@@ -1759,7 +1759,7 @@ async function firebasePush(){
 
 async function firebasePull(){
   saveFirebaseConfig();
-  const{url,user}=getFirebaseConfig();if(!url){alert('Voer eerst een Firebase Database URL in.');return;}
+  const{url,user}=getFirebaseConfig();
   setSyncStatus('idle','Ophalen...');
   try{
     const res=await fetch(`${url}/welzijn/${user}.json`);
