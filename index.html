@@ -1,0 +1,3453 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mijn Welzijn</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --cream:#fdf6ee; --cream2:#faf0e4; --parchment:#f5e8d6;
+  --gold:#c8954a; --gold-light:#e8ba76; --gold-pale:#f5e0bb;
+  --rose:#c47a7a; --rose-light:#e8a4a4; --rose-pale:#faeaea;
+  --sage:#7a9e7e; --sage-light:#a8c5ab; --sage-pale:#e8f2e9;
+  --sky:#6a9ec5; --sky-pale:#e3f0fa;
+  --burgundy:#7a3030; --text:#3d2b1f; --text-soft:#7a5c48; --text-muted:#b89880;
+  --border:#e8d5be; --border-light:#f0e4d4;
+  --shadow:rgba(100,60,20,0.10); --shadow-deep:rgba(100,60,20,0.20);
+  --sidebar:240px;
+  --radius:16px; --font-head:'Playfair Display',serif; --font-body:'Nunito',sans-serif;
+  --card-bg:#fff; --content-bg:var(--cream);
+}
+
+html.dark {
+  --cream:#1a1612; --cream2:#221e19; --parchment:#2a2420;
+  --gold:#d4a855; --gold-light:#e8c070; --gold-pale:#2d2318;
+  --rose:#c47a7a; --rose-light:#a86060; --rose-pale:#2a1818;
+  --sage:#7a9e7e; --sage-light:#5d8060; --sage-pale:#182218;
+  --sky:#6a9ec5; --sky-pale:#182233;
+  --burgundy:#e8a0a0; --text:#f0e8e0; --text-soft:#c8b8a8; --text-muted:#887060;
+  --border:#3a3028; --border-light:#2e2820;
+  --shadow:rgba(0,0,0,0.3); --shadow-deep:rgba(0,0,0,0.5);
+  --card-bg:#241f1a; --content-bg:var(--cream);
+}
+
+html.dark body { background:var(--cream); }
+html.dark .card { background:var(--card-bg); border-color:var(--border); }
+html.dark .stat-card { background:var(--card-bg); border-color:var(--border); }
+html.dark .streak-card { background:linear-gradient(135deg,var(--gold-pale),var(--rose-pale)); }
+html.dark input, html.dark select, html.dark textarea { background:var(--cream2); border-color:var(--border); color:var(--text); }
+html.dark .log-item { background:var(--cream2); border-color:var(--border); }
+html.dark .tab-bar { background:var(--cream2); border-color:var(--border); }
+html.dark .sport-pill { background:var(--cream2); border-color:var(--border); }
+html.dark .q-sport-pill { background:var(--cream2); border-color:var(--border); }
+html.dark .slaap-star { background:var(--cream2); border-color:var(--border); }
+html.dark .content { background:var(--cream); }
+html.dark .welcome-banner { background:linear-gradient(135deg,var(--gold-pale),var(--rose-pale)); }
+html.dark .quote-banner { background:linear-gradient(135deg,var(--gold-pale),var(--rose-pale)); }
+html.dark .badge-neutral { background:var(--parchment); }
+html.dark .btn.secondary { background:var(--parchment); color:var(--text-soft); }
+html.dark .cup { background:var(--parchment); border-color:var(--border); }
+
+/* ===== MOBIEL ===== */
+.mobile-nav{display:none;}
+.fab-btn{display:none;}
+.mob-overlay{display:none;}
+.mob-sheet{display:none;}
+
+@media(max-width:768px){
+  .sidebar{display:none!important;}
+  .app{flex-direction:column;}
+  .content{padding:14px 12px 90px;width:100%;}
+
+  /* Stat cards: 2x2 */
+  #dash-stat-row{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;}
+  #stat-bmi{display:none;} /* verberg BMI stat op mobiel */
+
+  /* Grids: 1 kolom */
+  .grid-2,.grid-3{grid-template-columns:1fr!important;}
+  #dash-row2,#dash-row3{grid-template-columns:1fr!important;}
+  #dash-streaks{grid-template-columns:1fr 1fr!important;}
+
+  /* Weekdoel+BMI rij */
+  #dash-weekdoel,#dash-bmi-card{min-width:0;}
+
+  /* Charts iets kleiner */
+  .chart-wrap.tall{height:180px!important;}
+
+  /* Page header compacter */
+  .page-header{flex-direction:column;gap:10px;padding-bottom:14px;}
+  .page-header .quote-banner{display:none;}
+  .page-title{font-size:1.4rem!important;}
+
+  /* Kaartjes minder padding */
+  .card{padding:14px 16px;}
+  .stat-card{padding:12px 14px;}
+
+  /* Instellingen: 1 kolom */
+  #view-instellingen .grid-2{grid-template-columns:1fr!important;}
+
+  /* Mobiele navigatie balk */
+  .mobile-nav{
+    display:flex;
+    position:fixed;
+    bottom:0;left:0;right:0;
+    background:#7a3030;
+    z-index:999;
+    padding-bottom:env(safe-area-inset-bottom,0);
+    border-top:1px solid rgba(255,255,255,.1);
+  }
+  .mob-nav-btn{
+    flex:1;
+    background:none;
+    border:none;
+    padding:8px 4px 10px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mob-nav-icon{font-size:18px;}
+  .mob-nav-label{font-size:9px;color:rgba(255,255,255,.55);letter-spacing:.02em;}
+  .mob-nav-btn.active .mob-nav-label{color:rgba(255,255,255,.95);}
+  .mob-nav-btn.active{background:rgba(255,255,255,.1);}
+
+  /* FAB */
+  .fab-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:fixed;
+    bottom:74px;right:18px;
+    width:52px;height:52px;
+    border-radius:50%;
+    background:#7a3030;
+    color:#fff;
+    font-size:26px;
+    font-weight:300;
+    border:none;
+    cursor:pointer;
+    z-index:998;
+    box-shadow:0 4px 16px rgba(122,48,48,.4);
+    transition:transform .2s,background .2s;
+  }
+  .fab-btn.open{transform:rotate(45deg);background:#c47a7a;}
+
+  /* Overlay */
+  .mob-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.4);
+    z-index:1000;
+  }
+  .mob-overlay.visible{display:block;}
+
+  /* Bottom sheet */
+  .mob-sheet{
+    display:block;
+    position:fixed;
+    bottom:-100%;
+    left:0;right:0;
+    background:#fff;
+    border-radius:20px 20px 0 0;
+    padding:14px 20px 24px;
+    z-index:1001;
+    transition:bottom .3s ease;
+    box-shadow:0 -4px 24px rgba(0,0,0,.12);
+  }
+  .mob-sheet.open{bottom:0;}
+  .mob-sheet-handle{width:40px;height:4px;background:var(--border);border-radius:999px;margin:0 auto 14px;}
+  .mob-sheet-title{font-family:var(--font-head);font-size:1.1rem;color:var(--text);margin-bottom:14px;}
+  .mob-sheet-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+  .mob-tab{padding:6px 12px;border-radius:999px;border:1.5px solid var(--border);background:var(--cream2);color:var(--text-muted);font-size:.78rem;cursor:pointer;font-family:var(--font-body);}
+  .mob-tab.active{background:var(--gold-pale);border-color:var(--gold);color:var(--gold);}
+  .fab-panel{display:flex;flex-direction:column;gap:10px;}
+  .mob-input{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;font-size:15px;background:var(--cream2);color:var(--text);font-family:var(--font-body);}
+  .mob-save-btn{width:100%;background:#7a3030;color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;cursor:pointer;font-family:var(--font-body);margin-top:4px;}
+  .mob-sport-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+  .mob-sport-pill{width:42px;height:42px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;}
+  .mob-sport-pill.selected{background:var(--gold-pale);border-color:var(--gold);}
+}
+
+/* ===== DARK MODE TOGGLE ===== */
+.dark-toggle {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 14px;
+  margin:8px 12px 0;
+  border-radius:12px;
+  cursor:pointer;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.12);
+  transition:background .2s;
+  user-select:none;
+}
+.dark-toggle:hover { background:rgba(255,255,255,0.14); }
+.dark-toggle-icon { font-size:1rem; }
+.dark-toggle-label { font-size:.8rem; font-weight:600; color:rgba(255,255,255,.7); flex:1; font-family:var(--font-body); }
+.dark-toggle-switch {
+  width:36px; height:20px; border-radius:999px;
+  background:rgba(255,255,255,0.2);
+  position:relative; transition:background .25s; flex-shrink:0;
+}
+.dark-toggle-switch::after {
+  content:''; position:absolute; top:3px; left:3px;
+  width:14px; height:14px; border-radius:50%;
+  background:#fff; transition:transform .25s;
+  box-shadow:0 1px 4px rgba(0,0,0,.3);
+}
+html.dark .dark-toggle-switch { background:var(--gold); }
+html.dark .dark-toggle-switch::after { transform:translateX(16px); }
+
+html, body { height:100%; }
+body { background:var(--cream); color:var(--text); font-family:var(--font-body);
+  background-image:radial-gradient(ellipse at 5% 0%,rgba(200,149,74,.07) 0%,transparent 40%),
+    radial-gradient(ellipse at 95% 100%,rgba(196,122,122,.07) 0%,transparent 40%); }
+
+/* ===== APP SHELL ===== */
+.app { display:flex; min-height:100vh; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width:var(--sidebar);
+  flex-shrink:0;
+  background:linear-gradient(180deg,#7a3030 0%,#8a3838 40%,#9a5535 80%,#b07030 100%);
+  display:flex;
+  flex-direction:column;
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow:hidden;
+}
+
+.sidebar::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at 100% 0%,rgba(255,255,255,.12) 0%,transparent 55%),
+    radial-gradient(ellipse at 0% 100%,rgba(0,0,0,.15) 0%,transparent 50%);
+  pointer-events:none;
+}
+
+.sidebar-floral {
+  position:absolute;
+  opacity:.1;
+  pointer-events:none;
+}
+.sidebar-floral.top { top:-20px; right:-20px; width:120px; }
+.sidebar-floral.bot { bottom:-20px; left:-10px; width:90px; transform:rotate(60deg) scaleX(-1); }
+
+.sidebar-logo {
+  position:relative;
+  z-index:1;
+  padding:28px 24px 20px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.sidebar-logo h1 { font-family:var(--font-head); font-size:1.35rem; color:#fff; font-weight:700; line-height:1.1; }
+.sidebar-logo h1 em { font-style:italic; color:var(--gold-light); }
+.sidebar-logo p { font-size:.7rem; color:rgba(255,255,255,.55); margin-top:4px; letter-spacing:.06em; }
+
+.sidebar-date {
+  position:relative; z-index:1;
+  padding:14px 24px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  font-size:.72rem;
+  color:rgba(255,255,255,.7);
+  line-height:1.5;
+  text-transform:capitalize;
+}
+.sidebar-date strong { display:block; font-size:.85rem; color:#fff; font-family:var(--font-head); }
+
+.sidebar-nav {
+  position:relative; z-index:1;
+  flex:1;
+  padding:16px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.nav-item {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 14px;
+  border-radius:12px;
+  cursor:pointer;
+  transition:all .2s;
+  color:rgba(255,255,255,.65);
+  font-size:.85rem;
+  font-weight:600;
+  border:none;
+  background:none;
+  width:100%;
+  text-align:left;
+  font-family:var(--font-body);
+  letter-spacing:.02em;
+}
+.nav-item:hover { background:rgba(255,255,255,.1); color:#fff; }
+.nav-item.active { background:rgba(255,255,255,.18); color:#fff; box-shadow:0 2px 12px rgba(0,0,0,.15); }
+.nav-item.active .nav-icon { opacity:1; }
+.nav-icon { font-size:1.1rem; width:22px; text-align:center; opacity:.75; }
+.nav-label { flex:1; }
+
+.sidebar-footer {
+  position:relative; z-index:1;
+  padding:16px;
+  border-top:1px solid rgba(255,255,255,.1);
+}
+.sidebar-quote {
+  font-size:.72rem;
+  color:rgba(255,255,255,.5);
+  font-style:italic;
+  line-height:1.5;
+  text-align:center;
+}
+
+/* ===== CONTENT ===== */
+.content {
+  flex:1;
+  overflow-y:auto;
+  padding:32px 36px 60px;
+  min-width:0;
+}
+
+.page-header {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  margin-bottom:28px;
+  gap:16px;
+}
+.page-title { font-family:var(--font-head); font-size:1.8rem; color:var(--text); font-weight:700; }
+.page-title em { font-style:italic; color:var(--gold); }
+.page-subtitle { font-size:.82rem; color:var(--text-muted); margin-top:4px; }
+
+.view { display:none; }
+.view.active { display:block; animation:fadeUp .3s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* ===== GRID HELPERS ===== */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+.grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:20px; }
+.grid-2-1 { display:grid; grid-template-columns:2fr 1fr; gap:20px; }
+.grid-1-2 { display:grid; grid-template-columns:1fr 2fr; gap:20px; }
+.grid-3-2 { display:grid; grid-template-columns:3fr 2fr; gap:20px; }
+.col-span-2 { grid-column:span 2; }
+.col-span-3 { grid-column:span 3; }
+.col-span-4 { grid-column:span 4; }
+.gap-section { margin-bottom:20px; }
+
+/* ===== CARD ===== */
+.card {
+  background:#fff;
+  border:1px solid var(--border-light);
+  border-radius:var(--radius);
+  padding:24px;
+  box-shadow:0 3px 20px var(--shadow);
+  position:relative;
+  overflow:hidden;
+  height:100%;
+}
+.card::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:3px;
+  background:linear-gradient(90deg,var(--gold),var(--rose-light),var(--sage-light));
+  opacity:.65;
+}
+.card-label { font-size:.63rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; }
+.card-head-row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; gap:8px; }
+.card-value { font-family:var(--font-head); font-size:2.4rem; line-height:1; color:var(--text); }
+.card-unit { font-family:var(--font-body); font-size:1rem; color:var(--text-muted); font-weight:400; }
+
+/* ===== STAT CARDS ===== */
+.stat-card {
+  background:#fff;
+  border:1px solid var(--border-light);
+  border-radius:var(--radius);
+  padding:20px 22px;
+  box-shadow:0 3px 20px var(--shadow);
+  display:flex;
+  align-items:center;
+  gap:16px;
+  transition:transform .2s, box-shadow .2s;
+}
+.stat-card:hover { transform:translateY(-2px); box-shadow:0 6px 28px var(--shadow-deep); }
+.stat-icon { font-size:2rem; width:48px; text-align:center; flex-shrink:0; }
+.stat-info { flex:1; }
+.stat-val { font-family:var(--font-head); font-size:1.8rem; line-height:1; color:var(--text); }
+.stat-unit { font-size:.78rem; color:var(--text-muted); display:inline; margin-left:4px; }
+.stat-label { font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin-top:3px; }
+.stat-delta { font-size:.72rem; font-weight:700; padding:2px 9px; border-radius:999px; white-space:nowrap; }
+
+/* ===== BADGE ===== */
+.badge { font-size:.75rem; font-weight:700; padding:4px 12px; border-radius:999px; font-family:var(--font-body); white-space:nowrap; }
+.badge-good { background:var(--sage-pale); color:var(--sage); border:1px solid var(--sage-light); }
+.badge-bad { background:var(--rose-pale); color:var(--rose); border:1px solid var(--rose-light); }
+.badge-neutral { background:var(--parchment); color:var(--text-muted); border:1px solid var(--border); }
+.badge-gold { background:var(--gold-pale); color:var(--gold); border:1px solid var(--gold-light); }
+
+/* ===== CHART ===== */
+.chart-wrap { position:relative; height:200px; }
+.chart-wrap.tall { height:260px; }
+.chart-wrap.short { height:140px; }
+
+/* ===== PROGRESS ===== */
+.progress-bar { height:8px; background:var(--parchment); border-radius:999px; overflow:hidden; margin:10px 0 6px; }
+.progress-fill { height:100%; border-radius:999px; transition:width .6s cubic-bezier(.34,1.56,.64,1); background:linear-gradient(90deg,var(--gold),var(--rose-light)); }
+.progress-labels { display:flex; justify-content:space-between; font-size:.72rem; color:var(--text-muted); font-weight:600; }
+
+/* ===== STREAK ===== */
+.streak-card {
+  background:linear-gradient(135deg,var(--gold-pale),var(--rose-pale));
+  border:1.5px solid var(--gold-light);
+  border-radius:var(--radius);
+  padding:20px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.streak-num { font-family:var(--font-head); font-size:2.2rem; color:var(--burgundy); line-height:1; }
+.streak-info { flex:1; }
+.streak-label { font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); }
+.streak-sub { font-size:.78rem; color:var(--text-soft); margin-top:2px; }
+
+/* ===== WATER CUPS ===== */
+.water-cups { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 8px; }
+.cup { width:38px; height:46px; position:relative; cursor:pointer; overflow:hidden; border-radius:4px 4px 10px 10px; border:1.5px solid var(--border); background:var(--parchment); transition:all .2s; }
+.cup::before { content:'💧'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1rem; opacity:.3; transition:opacity .2s; }
+.cup::after { content:''; position:absolute; bottom:0; left:0; right:0; height:0; background:linear-gradient(180deg,rgba(122,158,126,.5),rgba(122,158,126,.85)); transition:height .35s cubic-bezier(.34,1.1,.64,1); }
+.cup.filled { border-color:var(--sage-light); }
+.cup.filled::before { opacity:0; }
+.cup.filled::after { height:100%; }
+.cup:hover { transform:scale(1.08); box-shadow:0 4px 12px var(--shadow); }
+
+/* ===== BMI ===== */
+.bmi-row { display:flex; align-items:center; gap:20px; }
+.bmi-circle { width:80px; height:80px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; border:3px solid var(--gold-light); background:var(--gold-pale); }
+.bmi-val { font-family:var(--font-head); font-size:1.5rem; line-height:1; color:var(--burgundy); }
+.bmi-small { font-size:.58rem; color:var(--text-muted); font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-top:2px; }
+.bmi-info { flex:1; }
+.bmi-cat { font-size:1rem; font-weight:700; color:var(--text); margin-bottom:4px; }
+.bmi-sub { font-size:.78rem; color:var(--text-muted); line-height:1.5; }
+.bmi-scale { display:flex; height:6px; border-radius:999px; overflow:hidden; gap:1px; margin-top:10px; }
+.bmi-scale div { flex:1; border-radius:999px; }
+.bmi-pointer { margin-top:3px; font-size:.65rem; color:var(--text-muted); }
+
+/* ===== SPORT RING ===== */
+.sport-doel-row { display:flex; align-items:center; gap:16px; }
+.sport-ring { position:relative; width:52px; height:52px; flex-shrink:0; }
+.sport-ring svg { transform:rotate(-90deg); }
+.sport-ring-bg { fill:none; stroke:var(--parchment); stroke-width:6; }
+.sport-ring-fill { fill:none; stroke:var(--rose); stroke-width:6; stroke-linecap:round; transition:stroke-dashoffset .7s cubic-bezier(.34,1.2,.64,1); }
+.sport-ring-text { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-size:1rem; color:var(--burgundy); }
+.sport-doel-title { font-size:.95rem; font-weight:700; color:var(--text); }
+.sport-doel-sub { font-size:.78rem; color:var(--text-muted); margin-top:4px; line-height:1.5; }
+
+/* ===== INPUTS ===== */
+.input-group { display:flex; flex-direction:column; gap:6px; flex:1; min-width:110px; }
+.input-group label { font-size:.68rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.1em; }
+input[type=number],input[type=text],input[type=date],input[type=url],select,textarea { background:var(--cream2); border:1.5px solid var(--border); border-radius:10px; color:var(--text); font-family:var(--font-body); font-size:.92rem; font-weight:500; padding:9px 13px; width:100%; outline:none; transition:border-color .2s,box-shadow .2s; }
+input:focus,select:focus,textarea:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(200,149,74,.12); }
+textarea { resize:vertical; min-height:70px; }
+.input-row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+
+/* ===== BUTTONS ===== */
+.btn { background:linear-gradient(135deg,#7a3030,#a04040); color:#fff; border:none; border-radius:10px; padding:10px 22px; font-family:var(--font-body); font-size:.88rem; font-weight:700; cursor:pointer; white-space:nowrap; letter-spacing:.03em; transition:opacity .2s,transform .15s,box-shadow .2s; box-shadow:0 3px 12px rgba(122,48,48,.25); }
+.btn:hover { opacity:.9; box-shadow:0 5px 16px rgba(122,48,48,.35); }
+.btn:active { transform:scale(.97); }
+.btn.secondary { background:var(--parchment); color:var(--text-soft); box-shadow:0 2px 8px var(--shadow); border:1px solid var(--border); }
+.btn.secondary:hover { opacity:1; background:var(--gold-pale); }
+.btn.gold { background:linear-gradient(135deg,var(--gold),var(--gold-light)); box-shadow:0 3px 12px rgba(200,149,74,.25); color:#fff; }
+.btn.sage { background:linear-gradient(135deg,var(--sage),var(--sage-light)); box-shadow:0 3px 12px rgba(122,158,126,.25); color:#fff; }
+.btn.sky { background:linear-gradient(135deg,#5a8eb5,var(--sky)); box-shadow:0 3px 12px rgba(106,158,197,.25); color:#fff; }
+.btn.danger { background:linear-gradient(135deg,#a03030,#c04040); box-shadow:0 3px 12px rgba(160,48,48,.25); color:#fff; }
+.btn-row { display:flex; gap:10px; flex-wrap:wrap; }
+
+/* ===== LOG LIST ===== */
+.log-list { display:flex; flex-direction:column; gap:8px; }
+.log-item { display:flex; align-items:center; gap:12px; background:var(--cream2); border:1px solid var(--border-light); border-radius:12px; padding:11px 14px; transition:box-shadow .2s; }
+.log-item:hover { box-shadow:0 3px 14px var(--shadow); }
+.log-icon { width:36px; height:36px; border-radius:9px; background:var(--parchment); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; border:1px solid var(--border); }
+.log-item-left { flex:1; }
+.log-date { font-size:.65rem; color:var(--text-muted); font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+.log-val { font-size:.95rem; font-weight:700; color:var(--text); font-family:var(--font-head); margin-top:1px; }
+.log-note { font-size:.75rem; color:var(--text-muted); margin-top:2px; font-style:italic; }
+.delete-btn { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:.85rem; padding:6px; border-radius:8px; transition:all .2s; opacity:.4; }
+.delete-btn:hover { color:var(--rose); background:var(--rose-pale); opacity:1; }
+
+/* ===== SPORT PILLS ===== */
+.sport-pills { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.sport-pill { padding:7px 15px; border-radius:999px; border:1.5px solid var(--border); background:var(--cream2); color:var(--text-muted); font-size:.82rem; font-weight:600; cursor:pointer; transition:all .18s; }
+.sport-pill:hover { border-color:var(--gold); color:var(--gold); }
+.sport-pill.selected { background:var(--gold-pale); border-color:var(--gold); color:var(--gold); box-shadow:0 2px 8px rgba(200,149,74,.2); }
+
+/* ===== QUICK ADD ===== */
+.quick-row { position:relative; }
+.quick-summary { display:flex; align-items:center; gap:12px; padding:13px 20px; cursor:pointer; transition:background .15s; user-select:none; }
+.quick-summary:hover { background:var(--cream2); }
+.quick-icon { font-size:1.2rem; width:26px; text-align:center; flex-shrink:0; }
+.quick-title { font-size:.88rem; font-weight:700; color:var(--text); flex:1; }
+.quick-toggle { font-size:1.1rem; color:var(--gold); font-weight:700; transition:transform .25s; width:22px; text-align:center; }
+.quick-toggle.open { transform:rotate(45deg); }
+.quick-form { display:none; padding:0 20px 16px; animation:fadeUp .2s ease; }
+.quick-form.open { display:block; }
+.quick-inner { display:flex; align-items:center; gap:8px; }
+.q-sport-pill { width:34px; height:34px; border-radius:9px; border:1.5px solid var(--border); background:var(--cream2); display:flex; align-items:center; justify-content:center; font-size:1.05rem; cursor:pointer; transition:all .15s; flex-shrink:0; }
+.q-sport-pill:hover { border-color:var(--gold); }
+.q-sport-pill.selected { background:var(--gold-pale); border-color:var(--gold); }
+
+/* ===== SECTION TITLE ===== */
+.section-title { font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--text-muted); margin-bottom:12px; }
+
+/* ===== GOAL CHIP ===== */
+.goal-chip { display:inline-flex; align-items:center; gap:6px; background:var(--gold-pale); border:1.5px solid var(--gold-light); border-radius:999px; padding:5px 14px; font-size:.78rem; color:var(--gold); font-weight:700; }
+
+/* ===== BADGES GRID ===== */
+.badges-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; }
+.badge-item { border-radius:14px; padding:16px 12px; text-align:center; transition:transform .2s; }
+.badge-item:hover { transform:translateY(-2px); }
+.badge-item.earned { background:linear-gradient(135deg,var(--gold-pale),var(--rose-pale)); border:1.5px solid var(--gold-light); }
+.badge-item.locked { background:var(--parchment); border:1.5px dashed var(--border); opacity:.5; filter:grayscale(.4); }
+.badge-emoji { font-size:2rem; display:block; margin-bottom:8px; }
+.badge-name { font-size:.75rem; font-weight:700; color:var(--text); }
+.badge-desc { font-size:.65rem; color:var(--text-muted); margin-top:3px; line-height:1.4; }
+
+/* ===== HEATMAP ===== */
+.heatmap-outer { overflow-x:auto; }
+.heatmap-grid { display:flex; gap:3px; }
+.hm-col { display:flex; flex-direction:column; gap:3px; }
+.hm-cell { width:14px; height:14px; border-radius:3px; cursor:pointer; transition:opacity .15s; flex-shrink:0; }
+.hm-cell:hover { opacity:.7; }
+.hm-month-row { display:flex; gap:3px; margin-bottom:4px; padding-left:24px; }
+.hm-day-labels { display:flex; flex-direction:column; gap:3px; padding-top:18px; flex-shrink:0; }
+.hm-day-label { font-size:.65rem; color:var(--text-muted); height:14px; line-height:14px; width:18px; }
+.hm-wrap { display:flex; gap:4px; }
+.hm-legend { display:flex; align-items:center; gap:6px; margin-top:10px; font-size:.7rem; color:var(--text-muted); }
+.hm-leg-cells { display:flex; gap:2px; }
+.hm-tabs { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.hm-tab { padding:6px 14px; border-radius:999px; border:1.5px solid var(--border); background:var(--cream2); color:var(--text-muted); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .15s; font-family:var(--font-body); }
+.hm-tab.active { background:var(--gold-pale); border-color:var(--gold); color:var(--gold); }
+
+/* ===== MIJLPALEN TIJDLIJN ===== */
+.timeline-wrap { position:relative; padding-left:18px; }
+.timeline-line { position:absolute; left:18px; top:10px; bottom:10px; width:2px; background:var(--border); border-radius:2px; }
+.tl-item { display:flex; gap:16px; align-items:flex-start; margin-bottom:20px; }
+.tl-dot-wrap { position:relative; flex-shrink:0; width:20px; display:flex; justify-content:center; padding-top:3px; }
+.tl-dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; border:2.5px solid var(--border-light); }
+.tl-dot.done { background:var(--sage); border-color:var(--sage-light); }
+.tl-dot.active { background:var(--gold); border-color:var(--gold-light); box-shadow:0 0 0 4px rgba(200,149,74,.15); }
+.tl-dot.future { background:var(--parchment); border-color:var(--border); }
+.tl-content { flex:1; }
+.tl-date { font-size:.65rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:2px; }
+.tl-title { font-size:.92rem; font-weight:700; color:var(--text); font-family:var(--font-head); margin-bottom:4px; }
+.tl-badge { display:inline-block; font-size:.68rem; font-weight:700; padding:2px 9px; border-radius:999px; }
+.tl-badge.done { background:var(--sage-pale); color:var(--sage); border:1px solid var(--sage-light); }
+.tl-badge.active { background:var(--gold-pale); color:var(--gold); border:1px solid var(--gold-light); }
+.tl-badge.future { background:var(--parchment); color:var(--text-muted); border:1px solid var(--border); }
+.tl-bar { height:5px; background:var(--parchment); border-radius:999px; margin-top:8px; overflow:hidden; }
+.tl-bar-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--gold),var(--rose-light)); transition:width .5s; }
+.tl-sub { font-size:.75rem; color:var(--text-muted); margin-top:4px; font-style:italic; }
+
+/* ===== MEETMOMENT TIJDLIJN ===== */
+.mm-scroll { overflow-x:auto; padding-bottom:6px; }
+.mm-timeline { display:flex; align-items:flex-start; min-width:max-content; padding:10px 4px 4px; position:relative; }
+.mm-track { position:absolute; top:18px; left:70px; right:70px; height:2px; background:var(--border); z-index:0; pointer-events:none; }
+.mm-entry { display:flex; flex-direction:column; align-items:center; width:140px; flex-shrink:0; position:relative; cursor:pointer; }
+.mm-dot-wrap { position:relative; z-index:1; margin-bottom:10px; }
+.mm-dot { width:18px; height:18px; border-radius:50%; border:3px solid var(--cream); }
+.mm-dot.done { background:var(--sage); box-shadow:0 0 0 2px var(--sage-light); }
+.mm-dot.active { background:var(--gold); box-shadow:0 0 0 4px rgba(200,149,74,.25); }
+.mm-dot.future { background:var(--parchment); box-shadow:0 0 0 2px var(--border); }
+.mm-card { background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:12px 10px; width:128px; text-align:center; transition:border-color .15s; }
+.mm-card:hover { border-color:var(--gold); }
+.mm-card.active { border-color:var(--gold); background:var(--gold-pale); }
+.mm-photo { width:100%; height:72px; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:8px; font-size:.72rem; gap:3px; }
+.mm-photo.done { background:var(--sage-pale); color:var(--sage); }
+.mm-photo.active { background:var(--gold-pale); color:var(--gold); }
+.mm-photo.future { background:var(--parchment); color:var(--text-muted); border:1px dashed var(--border); }
+.mm-date { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:2px; }
+.mm-weight { font-size:1.3rem; font-weight:700; font-family:var(--font-head); color:var(--text); }
+.mm-unit { font-size:.72rem; color:var(--text-muted); }
+.mm-delta { font-size:.68rem; padding:2px 8px; border-radius:999px; margin-top:4px; display:inline-block; }
+.mm-delta.good { background:var(--sage-pale); color:var(--sage); }
+.mm-delta.bad { background:var(--rose-pale); color:var(--rose); }
+.mm-note { font-size:.68rem; color:var(--text-muted); margin-top:4px; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:108px; }
+.mm-detail { background:var(--parchment); border-radius:14px; padding:16px 20px; margin-top:16px; }
+.mm-detail-stats { display:flex; gap:12px; margin-bottom:12px; }
+.mm-stat { flex:1; background:#fff; border-radius:10px; padding:10px 12px; text-align:center; border:1px solid var(--border-light); }
+.mm-stat-val { font-size:1.2rem; font-weight:700; font-family:var(--font-head); color:var(--text); }
+.mm-stat-label { font-size:.68rem; color:var(--text-muted); margin-top:2px; }
+.mm-add-form { background:var(--cream2); border-radius:14px; padding:16px; margin-top:14px; border:1px solid var(--border); display:none; }
+
+/* ===== TOGGLE SWITCH ===== */
+.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border-light); gap:16px; }
+.toggle-row:last-child { border-bottom:none; }
+.toggle-info { flex:1; }
+.toggle-label { font-size:.88rem; font-weight:700; color:var(--text); }
+.toggle-desc { font-size:.72rem; color:var(--text-muted); margin-top:2px; }
+.toggle { position:relative; width:44px; height:24px; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; position:absolute; }
+.toggle-track { position:absolute; inset:0; background:var(--border); border-radius:999px; cursor:pointer; transition:background .25s; }
+.toggle-track::after { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:transform .25s; box-shadow:0 1px 4px rgba(0,0,0,.2); }
+.toggle input:checked + .toggle-track { background:var(--gold); }
+.toggle input:checked + .toggle-track::after { transform:translateX(20px); }
+
+/* ===== FIREBASE STATUS ===== */
+.sync-status { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; font-size:.8rem; font-weight:600; margin-bottom:12px; }
+.sync-status.ok { background:var(--sage-pale); color:var(--sage); border:1px solid var(--sage-light); }
+.sync-status.err { background:var(--rose-pale); color:var(--rose); border:1px solid var(--rose-light); }
+.sync-status.idle { background:var(--parchment); color:var(--text-muted); border:1px solid var(--border); }
+.sync-dot { width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+/* ===== EMPTY STATE ===== */
+.empty-state { text-align:center; padding:40px 0 24px; color:var(--text-muted); font-size:.9rem; font-style:italic; }
+.empty-state span { display:block; font-size:2.5rem; margin-bottom:10px; }
+
+/* ===== DIVIDER ===== */
+.divider { height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:20px 0; }
+/* ===== VOORTGANG CARD ===== */
+.vg-stats { display:flex; align-items:center; justify-content:space-between; margin:12px 0 4px; gap:8px; }
+.vg-stat { flex:1; }
+.vg-stat-center { text-align:center; }
+.vg-stat-val { font-family:var(--font-head); font-size:1.5rem; color:var(--text); line-height:1; }
+.vg-stat-label { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin-top:3px; }
+.vg-pct { font-family:var(--font-head); font-size:2rem; color:var(--gold); line-height:1; }
+.vg-footer { margin-top:14px; padding-top:12px; border-top:1px solid var(--border-light); display:flex; flex-direction:column; gap:6px; }
+.vg-predict { font-size:.8rem; color:var(--text-soft); display:flex; align-items:center; gap:6px; }
+.vg-motivatie { font-size:.8rem; font-style:italic; color:var(--text-muted); font-family:var(--font-head); }
+
+.q-slaap-pill { width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border); background:var(--cream2); display:flex; align-items:center; justify-content:center; font-size:1rem; cursor:pointer; transition:all .15s; flex-shrink:0; }
+.q-slaap-pill:hover { border-color:var(--sky); transform:scale(1.1); }
+.q-slaap-pill.selected { background:var(--sky-pale); border-color:var(--sky); }
+
+/* ===== SAVE POP ANIMATION ===== */
+@keyframes savePop {
+  0%   { transform:scale(1); }
+  30%  { transform:scale(1.018); box-shadow:0 8px 32px rgba(200,149,74,.3); }
+  60%  { transform:scale(0.995); }
+  100% { transform:scale(1); }
+}
+@keyframes statFlash {
+  0%   { background:var(--gold-pale); }
+  100% { background:#fff; }
+}
+.save-pop { animation:savePop .45s cubic-bezier(.34,1.56,.64,1) !important; }
+.stat-flash { animation:statFlash .8s ease-out !important; }
+
+/* ===== SLAAP ===== */
+.slaap-stars { display:flex; gap:6px; margin:10px 0 14px; flex-wrap:wrap; }
+.slaap-star { width:36px; height:36px; border-radius:10px; border:1.5px solid var(--border); background:var(--cream2); display:flex; align-items:center; justify-content:center; font-size:1.1rem; cursor:pointer; transition:all .15s; }
+.slaap-star:hover { border-color:var(--sky); transform:scale(1.1); }
+.slaap-star.selected { background:var(--sky-pale); border-color:var(--sky); box-shadow:0 2px 8px rgba(106,158,197,.25); }
+.slaap-bar { height:8px; background:var(--parchment); border-radius:999px; overflow:hidden; margin:8px 0 4px; }
+.slaap-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--sky),#a8d4f0); transition:width .6s cubic-bezier(.34,1.56,.64,1); }
+
+/* ===== QUOTE BANNER ===== */
+.quote-banner {
+  display:flex; align-items:center; gap:10px;
+  background:linear-gradient(135deg, var(--gold-pale), var(--rose-pale));
+  border:1.5px solid var(--gold-light);
+  border-radius:14px;
+  padding:10px 18px;
+  max-width:380px;
+  animation: fadeUp .5s ease .1s backwards;
+}
+.quote-icon { font-size:1.3rem; flex-shrink:0; }
+.quote-text {
+  font-family:var(--font-head);
+  font-size:.88rem;
+  font-style:italic;
+  color:var(--burgundy);
+  line-height:1.4;
+}
+/* ===== MOBILE ===== */
+.mobile-nav{display:none;}
+.fab-btn{display:none;}
+.mob-nav-btn{flex:1;background:none;border:none;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:rgba(255,255,255,.55);}
+.mob-nav-btn.active{color:#fff;}
+.mob-nav-btn.active::after{content:'';display:block;width:4px;height:4px;border-radius:50%;background:#c8954a;margin-top:2px;}
+.mob-nav-icon{font-size:18px;line-height:1;}
+.mob-nav-lbl{font-size:9px;font-family:var(--font-body);letter-spacing:.02em;}
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:299;}
+.mob-overlay.open{display:block;}
+.mob-sheet{display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;background:#fff;border-radius:22px 22px 0 0;padding:16px 20px calc(env(safe-area-inset-bottom,0px) + 20px);max-height:85vh;overflow-y:auto;}
+.mob-sheet.open{display:block;animation:slideUp .25s ease;}
+html.dark .mob-sheet{background:var(--card-bg);}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mob-handle{width:40px;height:4px;border-radius:999px;background:var(--border);margin:0 auto 16px;}
+.mob-sheet-title{font-size:1rem;font-weight:700;font-family:var(--font-head);color:var(--text);margin-bottom:14px;}
+.fab-type-btn{background:var(--cream2);border:1.5px solid var(--border);border-radius:14px;padding:16px 12px;font-size:.9rem;cursor:pointer;color:var(--text);font-family:var(--font-body);text-align:center;transition:all .15s;}
+.fab-type-btn:hover,.fab-type-btn:active{background:var(--gold-pale);border-color:var(--gold);}
+.fab-sport-pill-m{width:42px;height:42px;border-radius:11px;border:1.5px solid var(--border);background:var(--cream2);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.fab-sport-pill-m.sel{background:var(--gold-pale);border-color:var(--gold);}
+.mob-more-btn{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-light);cursor:pointer;color:var(--text);font-size:.95rem;font-family:var(--font-body);}
+.mob-more-btn:last-child{border-bottom:none;}
+.mob-more-icon{width:36px;height:36px;border-radius:10px;background:var(--parchment);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+
+@media(max-width:768px){
+  .sidebar{display:none!important;}
+  .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#7a3030;z-index:200;padding-bottom:env(safe-area-inset-bottom,0px);}
+  .fab-btn{display:flex;align-items:center;justify-content:center;position:fixed;bottom:72px;right:18px;width:54px;height:54px;border-radius:50%;background:#c8954a;color:#fff;border:none;font-size:26px;font-weight:300;z-index:198;cursor:pointer;box-shadow:0 4px 14px rgba(200,149,74,.5);}
+  .content{padding:20px 14px 88px!important;}
+  .page-header{flex-direction:column;align-items:flex-start;gap:10px;}
+  .quote-banner{width:100%;font-size:.78rem;}
+  .card{padding:14px 14px;}
+  .page-title{font-size:1.3rem!important;}
+  #dash-stat-row{grid-template-columns:1fr 1fr!important;gap:10px!important;}
+  #dash-row2{grid-template-columns:1fr!important;}
+  #dash-row3{grid-template-columns:1fr!important;}
+  .grid-2{grid-template-columns:1fr!important;}
+  .grid-3-2,.grid-3{grid-template-columns:1fr!important;}
+  .vg-stats{gap:8px;}
+  .mm-timeline{padding:8px 2px 4px;}
+  .mm-entry{width:120px;}
+  .heatmap-outer{overflow-x:auto;}
+  input,select{font-size:16px!important;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <svg class="sidebar-floral top" viewBox="0 0 200 200" fill="none"><circle cx="100" cy="100" r="30" fill="white" opacity=".5"/><ellipse cx="100" cy="55" rx="18" ry="35" fill="white" opacity=".7"/><ellipse cx="100" cy="145" rx="18" ry="35" fill="white" opacity=".7"/><ellipse cx="55" cy="100" rx="35" ry="18" fill="white" opacity=".7"/><ellipse cx="145" cy="100" rx="35" ry="18" fill="white" opacity=".7"/><ellipse cx="68" cy="68" rx="18" ry="35" fill="white" opacity=".5" transform="rotate(45 68 68)"/><ellipse cx="132" cy="68" rx="18" ry="35" fill="white" opacity=".5" transform="rotate(-45 132 68)"/><circle cx="100" cy="100" r="12" fill="white"/></svg>
+  <svg class="sidebar-floral bot" viewBox="0 0 200 200" fill="none"><ellipse cx="100" cy="40" rx="14" ry="30" fill="white" opacity=".8"/><ellipse cx="100" cy="160" rx="14" ry="30" fill="white" opacity=".8"/><ellipse cx="40" cy="100" rx="30" ry="14" fill="white" opacity=".8"/><ellipse cx="160" cy="100" rx="30" ry="14" fill="white" opacity=".8"/><circle cx="100" cy="100" r="20" fill="white" opacity=".6"/><circle cx="100" cy="100" r="9" fill="white"/></svg>
+
+  <div class="sidebar-logo">
+    <h1>Mijn <em>Welzijn</em></h1>
+    <p>jouw persoonlijk welzijn</p>
+  </div>
+
+  <div class="sidebar-date">
+    <strong id="sidebar-day"></strong>
+    <span id="sidebar-date"></span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <button class="nav-item active" onclick="switchTab('dashboard')">
+      <span class="nav-icon">✦</span><span class="nav-label">Dashboard</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('gewicht')">
+      <span class="nav-icon">⚖️</span><span class="nav-label">Gewicht</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('sport')">
+      <span class="nav-icon">🏃</span><span class="nav-label">Sport</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('water')">
+      <span class="nav-icon">💧</span><span class="nav-label">Water</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('slaap')">
+      <span class="nav-icon">😴</span><span class="nav-label">Slaap</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('prestaties')">
+      <span class="nav-icon">🏅</span><span class="nav-label">Prestaties</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('instellingen')">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Instellingen</span>
+    </button>
+  </nav>
+
+  <div class="dark-toggle" onclick="toggleDarkMode()">
+    <span class="dark-toggle-icon" id="dark-icon">🌙</span>
+    <span class="dark-toggle-label" id="dark-label">Donker thema</span>
+    <div class="dark-toggle-switch"></div>
+  </div>
+  <div class="sidebar-footer">
+    <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
+    <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
+  </div>
+</aside>
+
+<!-- ===== CONTENT ===== -->
+<div class="content">
+
+  <!-- ===== DASHBOARD ===== -->
+  <div class="view active" id="view-dashboard">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Goedemorgen, <em id="welcome-greeting">vandaag</em> 👋</div>
+        <div class="page-subtitle" id="welcome-sub">Hier is je overzicht van vandaag.</div>
+        <div id="dash-motivatie" style="display:none;margin-top:4px;font-size:.82rem;font-style:italic;color:var(--gold)"></div>
+      </div>
+      <div class="quote-banner" id="quote-banner">
+        <span class="quote-icon" id="quote-icon">🌸</span>
+        <span class="quote-text" id="quote-text">Kleine stappen tellen.</span>
+      </div>
+    </div>
+
+    <!-- Row 1: stat cards compact -->
+    <div class="gap-section" id="dash-stat-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+      <div class="stat-card" id="stat-gewicht">
+        <div class="stat-icon">⚖️</div>
+        <div class="stat-info">
+          <div><span class="stat-val" id="dash-gewicht">—</span><span class="stat-unit">kg</span></div>
+          <div class="stat-label">Huidig gewicht</div>
+          <div id="dash-gewicht-delta" class="stat-delta badge badge-neutral" style="margin-top:5px">—</div>
+        </div>
+      </div>
+      <div class="stat-card" id="stat-sport">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-info">
+          <div><span class="stat-val" id="dash-sport">0</span><span class="stat-unit">trainingen</span></div>
+          <div class="stat-label">Deze week</div>
+        </div>
+      </div>
+      <div class="stat-card" id="stat-water">
+        <div class="stat-icon">💧</div>
+        <div class="stat-info">
+          <div><span class="stat-val" id="dash-water">0</span><span class="stat-unit" id="dash-water-unit">/ 8</span></div>
+          <div class="stat-label">Glazen vandaag</div>
+        </div>
+      </div>
+      <div class="stat-card" id="stat-bmi">
+        <div class="stat-icon">📏</div>
+        <div class="stat-info">
+          <div><span class="stat-val" id="dash-bmi-stat">—</span></div>
+          <div class="stat-label">BMI</div>
+          <div id="dash-bmi-badge" class="stat-delta badge badge-neutral" style="margin-top:5px">—</div>
+        </div>
+      </div>
+      <div class="stat-card" id="stat-slaap">
+        <div class="stat-icon">😴</div>
+        <div class="stat-info">
+          <div><span class="stat-val" id="dash-slaap">—</span><span class="stat-unit">uur</span></div>
+          <div class="stat-label">Slaap gisteren</div>
+          <div id="dash-slaap-kwaliteit" class="stat-delta badge badge-neutral" style="margin-top:5px">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: links gewicht+slaap gestapeld | rechts voortgang+streaks+weekdoel+BMI -->
+    <div class="gap-section" id="dash-row2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+
+      <!-- Linkerkolom: gewicht chart (kleiner) + slaap eronder -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <div class="card" id="dash-gewicht-chart">
+          <div class="card-head-row">
+            <div class="card-label">Gewicht — verloop</div>
+          </div>
+          <div class="chart-wrap" style="height:160px"><canvas id="weightChart"></canvas></div>
+          <div id="qrow-gewicht" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-light)">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <input type="number" id="q-gewicht-val" placeholder="Gewicht (kg)" step="0.1" min="30" max="300" style="flex:1;min-width:100px">
+              <input type="date" id="q-gewicht-datum" style="flex:1;min-width:120px">
+              <input type="text" id="q-gewicht-note" placeholder="Notitie" style="flex:1;min-width:90px">
+              <button class="btn" style="padding:8px 16px;white-space:nowrap" onclick="quickAddGewicht()">＋</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="dash-slaap-chart-card">
+          <div class="card-head-row">
+            <div class="card-label">Slaap — 7 nachten</div>
+            <div id="dash-slaap-avg" class="badge badge-neutral">—</div>
+          </div>
+          <div class="chart-wrap" style="height:120px"><canvas id="dashSlaapChart"></canvas></div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-light);display:flex;gap:8px;align-items:center">
+            <input type="number" id="q-slaap-uren" placeholder="Uren" step="0.5" min="0" max="24" style="flex:1;min-width:70px">
+            <input type="date" id="q-slaap-datum" style="flex:1;min-width:100px">
+            <button class="btn sky" style="padding:7px 12px;white-space:nowrap" onclick="quickAddSlaap()">＋</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Rechterkolom: voortgang + streaks + weekdoel + BMI -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <div class="card" id="dash-voortgang">
+          <div class="card-head-row">
+            <div class="card-label">Voortgang naar doel</div>
+            <div id="dash-goal-chip" class="goal-chip">🎯 Stel doel in</div>
+          </div>
+          <div class="vg-stats" id="vg-stats">
+            <div class="vg-stat">
+              <div class="vg-stat-val" id="vg-af">—</div>
+              <div class="vg-stat-label">kg afgevallen</div>
+            </div>
+            <div class="vg-stat vg-stat-center">
+              <div class="vg-pct" id="vg-pct">0%</div>
+              <div class="vg-stat-label">behaald</div>
+            </div>
+            <div class="vg-stat" style="text-align:right">
+              <div class="vg-stat-val" id="vg-nog">—</div>
+              <div class="vg-stat-label">nog te gaan</div>
+            </div>
+          </div>
+          <div class="progress-bar" style="height:8px;margin:10px 0 5px">
+            <div class="progress-fill" id="dash-progress" style="width:0%"></div>
+          </div>
+          <div class="progress-labels">
+            <span id="dash-start-label">Start</span>
+            <span id="dash-goal-label">Doel</span>
+          </div>
+          <div class="vg-footer" id="vg-footer" style="display:none">
+            <div class="vg-predict" id="vg-predict"></div>
+            <div class="vg-motivatie" id="vg-motivatie"></div>
+          </div>
+        </div>
+
+        <!-- Streaks naast elkaar -->
+        <div id="dash-streaks" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="streak-card" style="padding:14px 16px">
+            <div style="font-size:1.5rem">💧</div>
+            <div class="streak-info">
+              <div class="streak-num" id="streak-water" style="font-size:1.8rem">0</div>
+              <div class="streak-label">Water streak</div>
+              <div class="streak-sub">Dagen op rij</div>
+            </div>
+          </div>
+          <div class="streak-card" style="padding:14px 16px">
+            <div style="font-size:1.5rem">🔥</div>
+            <div class="streak-info">
+              <div class="streak-num" id="streak-sport" style="font-size:1.8rem">0</div>
+              <div class="streak-label">Sport streak</div>
+              <div class="streak-sub">Aaneengesloten</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekdoel + BMI naast elkaar -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="card" id="dash-weekdoel">
+            <div class="card-label" style="margin-bottom:10px">Weekdoel sport</div>
+            <div class="sport-doel-row">
+              <div class="sport-ring">
+                <svg width="52" height="52" viewBox="0 0 52 52">
+                  <circle class="sport-ring-bg" cx="26" cy="26" r="21"/>
+                  <circle class="sport-ring-fill" id="sport-ring-fill" cx="26" cy="26" r="21" stroke-dasharray="131.9" stroke-dashoffset="131.9"/>
+                </svg>
+                <div class="sport-ring-text" id="sport-ring-text" style="font-size:.8rem">0/0</div>
+              </div>
+              <div class="sport-doel-info">
+                <div class="sport-doel-title" id="sport-doel-title" style="font-size:.82rem">Weekdoel</div>
+                <div class="sport-doel-sub" id="sport-doel-sub" style="font-size:.72rem">Via Instellingen.</div>
+              </div>
+            </div>
+          </div>
+          <div class="card" id="dash-bmi-card">
+            <div class="card-head-row" style="margin-bottom:8px">
+              <div class="card-label">BMI</div>
+              <div id="bmi-badge" class="badge badge-neutral" style="font-size:.68rem">—</div>
+            </div>
+            <div class="bmi-row" style="gap:10px">
+              <div class="bmi-circle" id="bmi-circle" style="width:56px;height:56px;flex-shrink:0">
+                <div class="bmi-val" id="bmi-val" style="font-size:1.1rem">—</div>
+                <div class="bmi-small">BMI</div>
+              </div>
+              <div class="bmi-info">
+                <div class="bmi-cat" id="bmi-cat" style="font-size:.82rem">Stel lengte in</div>
+                <div class="bmi-sub" id="bmi-sub" style="font-size:.72rem">Ga naar Instellingen.</div>
+                <div class="bmi-scale" style="margin-top:6px">
+                  <div style="background:#6ab0e8;flex:1.85"></div>
+                  <div style="background:#7ac97a;flex:.85"></div>
+                  <div style="background:#f0c040;flex:1"></div>
+                  <div style="background:#e88040;flex:1"></div>
+                  <div style="background:#e84040;flex:1"></div>
+                </div>
+                <div class="bmi-pointer" id="bmi-pointer" style="font-size:.6rem"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Row 3: sport + water naast elkaar -->
+    <div class="gap-section" id="dash-row3" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+
+      <!-- Sport chart + invoer -->
+      <div class="card" id="dash-sport-chart">
+        <div class="card-head-row">
+          <div class="card-label">Sport — deze week per dag</div>
+        </div>
+        <div class="chart-wrap" style="height:140px"><canvas id="sportChart"></canvas></div>
+        <div id="qrow-sport" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
+          <div id="q-sport-pills" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+            <div class="q-sport-pill selected" data-sport="Hardlopen">🏃</div>
+            <div class="q-sport-pill" data-sport="Fietsen">🚴</div>
+            <div class="q-sport-pill" data-sport="Zwemmen">🏊</div>
+            <div class="q-sport-pill" data-sport="Krachttraining">💪</div>
+            <div class="q-sport-pill" data-sport="Wandelen">🚶</div>
+            <div class="q-sport-pill" data-sport="Schaatsen">⛸️</div>
+            <div class="q-sport-pill" data-sport="Anders">✨</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="q-sport-duur" placeholder="Duur (min)" min="1" max="600" style="flex:1">
+            <input type="text" id="q-sport-note" placeholder="Notitie" style="flex:1">
+            <button class="btn gold" style="padding:8px 14px;white-space:nowrap" onclick="quickAddSport()">＋</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Water vandaag -->
+      <div class="card" id="dash-water-card">
+        <div class="card-head-row">
+          <div class="card-label">Water vandaag</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="q-water-count" style="font-family:var(--font-head);font-size:.95rem;color:var(--sage)">0/8</span>
+            <div id="water-pct-badge" class="badge badge-neutral">0%</div>
+          </div>
+        </div>
+        <div class="water-cups" id="dash-cups" style="gap:5px"></div>
+        <div class="progress-bar" style="background:var(--sage-pale);margin-top:10px">
+          <div class="progress-fill" id="dash-water-progress" style="width:0%;background:linear-gradient(90deg,var(--sage),var(--sage-light))"></div>
+        </div>
+        <button class="btn sage" onclick="quickAddWater()" style="width:100%;margin-top:10px;padding:8px">＋ Glas toevoegen</button>
+      </div>
+    </div>
+
+    <!-- Row 4: mijlpalen tijdlijn full width -->
+    <div class="gap-section" style="display:grid;grid-template-columns:1fr;gap:16px">
+      <div class="card" id="dash-mijlpalen">
+        <div class="card-label" style="margin-bottom:14px">Mijlpalen tijdlijn</div>
+        <div class="timeline-wrap">
+          <div class="timeline-line"></div>
+          <div id="tl-items" style="display:flex;flex-wrap:wrap;gap:0"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- row2/row3/row4 IDs bewaard voor visibility toggle compat -->
+    <div id="dash-row4" style="display:none"></div>
+
+  </div><!-- /view-dashboard -->
+
+  <!-- ===== GEWICHT ===== -->
+  <div class="view" id="view-gewicht">
+    <div class="page-header">
+      <div><div class="page-title">⚖️ <em>Gewicht</em></div><div class="page-subtitle">Bijhouden en analyseren</div></div>
+      <button class="btn secondary" onclick="exportCSV()">⬇ Download CSV</button>
+    </div>
+    <div class="grid-2 gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:16px">Nieuwe meting</div>
+        <div class="input-row" style="margin-bottom:12px">
+          <div class="input-group">
+            <label>Gewicht (kg)</label>
+            <input type="number" id="input-gewicht" placeholder="84.5" step="0.1" min="30" max="300">
+          </div>
+          <div class="input-group">
+            <label>Datum</label>
+            <input type="date" id="input-gewicht-datum">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Notitie (optioneel)</label>
+            <input type="text" id="input-gewicht-note" placeholder="bijv. na het sporten">
+          </div>
+          <button class="btn" onclick="addGewicht()" style="align-self:flex-end">Opslaan</button>
+        </div>
+        <div class="divider"></div>
+        <div class="section-title">Metingen</div>
+        <div class="log-list" id="gewicht-log" style="max-height:400px;overflow-y:auto"></div>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">Gewichtsverloop</div>
+        <div class="chart-wrap tall"><canvas id="gewichtChartFull"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Voortgang tijdlijn -->
+    <div class="gap-section">
+      <div class="card">
+        <div class="card-head-row">
+          <div class="card-label">Voortgang tijdlijn</div>
+          <button class="btn secondary" style="padding:6px 14px;font-size:.78rem" onclick="toggleMmForm()">＋ Meetmoment</button>
+        </div>
+
+        <!-- Invoerformulier -->
+        <div class="mm-add-form" id="mm-add-form">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div class="input-group" style="flex:0 0 140px">
+              <label>Datum</label>
+              <input type="date" id="mm-datum">
+            </div>
+            <div class="input-group" style="flex:0 0 120px">
+              <label>Gewicht (kg)</label>
+              <input type="number" id="mm-gewicht" placeholder="bijv. 91.5" step="0.1" min="30" max="300">
+            </div>
+            <div class="input-group" style="flex:1;min-width:150px">
+              <label>Notitie (optioneel)</label>
+              <input type="text" id="mm-notitie" placeholder="bijv. na vakantie, na sportweek...">
+            </div>
+            <button class="btn" onclick="addMeetmoment()" style="padding:9px 20px;align-self:flex-end">Opslaan</button>
+            <button class="btn secondary" onclick="toggleMmForm()" style="padding:9px 14px;align-self:flex-end">Annuleer</button>
+          </div>
+        </div>
+
+        <!-- Legenda -->
+        <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text-muted)">
+            <div style="width:12px;height:12px;border-radius:50%;background:var(--sage);box-shadow:0 0 0 2px var(--sage-light);flex-shrink:0"></div>
+            Eerder meetmoment
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text-muted)">
+            <div style="width:12px;height:12px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 3px rgba(200,149,74,.25);flex-shrink:0"></div>
+            Meest recent
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text-muted)">
+            <div style="width:30px;height:14px;border-radius:4px;background:var(--parchment);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--text-muted);flex-shrink:0">start</div>
+            Startpunt
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text-muted)">
+            <div style="width:30px;height:14px;border-radius:4px;background:var(--sage-pale);border:1px solid var(--sage-light);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--sage);flex-shrink:0">-3 kg</div>
+            Verschil t.o.v. vorige
+          </div>
+        </div>
+
+        <!-- Tijdlijn -->
+        <div class="mm-scroll" style="margin-top:14px">
+          <div class="mm-timeline" id="mm-timeline"></div>
+        </div>
+
+        <!-- Detail -->
+        <div class="mm-detail" id="mm-detail" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SPORT ===== -->
+  <div class="view" id="view-sport">
+    <div class="page-header">
+      <div><div class="page-title">🏃 <em>Sport</em></div><div class="page-subtitle">Trainingen bijhouden</div></div>
+      <div class="badge badge-gold" id="sport-maand-count" style="font-size:.85rem;padding:8px 16px">0 trainingen</div>
+    </div>
+    <div class="grid-2 gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:12px">Training toevoegen</div>
+        <div class="section-title" style="margin-bottom:8px">Kies je activiteit</div>
+        <div class="sport-pills" id="sport-pill-select">
+          <div class="sport-pill selected" data-sport="Hardlopen">🏃 Hardlopen</div>
+          <div class="sport-pill" data-sport="Fietsen">🚴 Fietsen</div>
+          <div class="sport-pill" data-sport="Zwemmen">🏊 Zwemmen</div>
+          <div class="sport-pill" data-sport="Krachttraining">💪 Krachttraining</div>
+          <div class="sport-pill" data-sport="Wandelen">🚶 Wandelen</div>
+          <div class="sport-pill" data-sport="Schaatsen">⛸️ Schaatsen</div>
+          <div class="sport-pill" data-sport="Anders">✨ Anders</div>
+        </div>
+        <div class="input-row" style="margin-bottom:12px">
+          <div class="input-group">
+            <label>Duur (minuten)</label>
+            <input type="number" id="input-sport-duur" placeholder="45" min="1" max="600">
+          </div>
+          <div class="input-group">
+            <label>Datum</label>
+            <input type="date" id="input-sport-datum">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Notitie</label>
+            <input type="text" id="input-sport-note" placeholder="bijv. 5km door het park">
+          </div>
+          <button class="btn gold" onclick="addSport()" style="align-self:flex-end">Opslaan</button>
+        </div>
+        <div class="divider"></div>
+        <div class="section-title">Trainingen</div>
+        <div class="log-list" id="sport-log" style="max-height:400px;overflow-y:auto"></div>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">Trainingen per dag — deze week</div>
+        <div class="chart-wrap tall"><canvas id="sportChartFull"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== WATER ===== -->
+  <div class="view" id="view-water">
+    <div class="page-header">
+      <div><div class="page-title">💧 <em>Water</em></div><div class="page-subtitle">Hydratatie bijhouden</div></div>
+    </div>
+    <div class="grid-2 gap-section">
+      <div class="card">
+        <div class="card-head-row">
+          <div>
+            <div class="card-label">Vandaag</div>
+            <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
+              <div class="card-value" id="water-val">0</div>
+              <div class="card-unit">/ <span id="water-doel-display">8</span> glazen</div>
+            </div>
+          </div>
+          <div id="water-pct-badge2" class="badge badge-neutral">0%</div>
+        </div>
+        <div class="water-cups" id="water-cups"></div>
+        <div class="progress-bar" style="background:var(--sage-pale)">
+          <div class="progress-fill" id="water-progress" style="width:0%;background:linear-gradient(90deg,var(--sage),var(--sage-light))"></div>
+        </div>
+        <div style="font-size:.78rem;color:var(--text-muted);font-style:italic;margin-top:6px;margin-bottom:16px">Tik een glas aan · doel: <strong id="water-doel-text">8</strong> glazen</div>
+        <button class="btn secondary" onclick="resetWater()" style="width:100%">↺ Reset vandaag</button>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">Afgelopen 7 dagen</div>
+        <div class="chart-wrap tall"><canvas id="waterChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SLAAP ===== -->
+  <div class="view" id="view-slaap">
+    <div class="page-header">
+      <div><div class="page-title">😴 <em>Slaap</em></div><div class="page-subtitle">Slaapuren bijhouden</div></div>
+    </div>
+
+    <!-- Row 1: invoer + stats -->
+    <div class="grid-2 gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:16px">Nacht toevoegen</div>
+        <div class="input-row" style="margin-bottom:14px">
+          <div class="input-group">
+            <label>Uren geslapen</label>
+            <input type="number" id="input-slaap-uren" placeholder="7.5" step="0.5" min="0" max="24">
+          </div>
+          <div class="input-group">
+            <label>Datum (nacht van)</label>
+            <input type="date" id="input-slaap-datum">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Notitie (optioneel)</label>
+            <input type="text" id="input-slaap-note" placeholder="bijv. laat naar bed">
+          </div>
+          <button class="btn sky" onclick="addSlaap()" style="align-self:flex-end">Opslaan</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label" style="margin-bottom:16px">Gemiddelden</div>
+        <div id="slaap-stats" style="display:flex;flex-direction:column;gap:0"></div>
+      </div>
+    </div>
+
+    <!-- Row 2: grafiek + log -->
+    <div class="grid-2 gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">Slaap afgelopen 14 nachten</div>
+        <div class="chart-wrap tall"><canvas id="slaapChart"></canvas></div>
+        <div style="display:flex;gap:14px;margin-top:12px;font-size:.72rem;color:var(--text-muted);font-weight:600">
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:#c47a7a;display:inline-block"></span> &lt; 6u slecht</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:#c8954a;display:inline-block"></span> 6–8u gewoon</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:#7a9e7e;display:inline-block"></span> &gt; 8u goed</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">Geschiedenis</div>
+        <div class="log-list" id="slaap-log" style="max-height:480px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PRESTATIES ===== -->
+  <div class="view" id="view-prestaties">
+    <div class="page-header">
+      <div><div class="page-title">🏅 <em>Prestaties</em></div><div class="page-subtitle">Jouw behaalde mijlpalen</div></div>
+      <div class="badge badge-gold" id="badges-earned-count" style="font-size:.85rem;padding:8px 16px">0 behaald</div>
+    </div>
+    <!-- Heatmap kalender -->
+    <div class="gap-section">
+      <div class="card">
+        <div class="card-head-row">
+          <div class="card-label">Activiteitenkalender — afgelopen jaar</div>
+        </div>
+        <div class="hm-tabs" id="hm-tabs">
+          <button class="hm-tab active" data-type="sport">🏃 Sport</button>
+          <button class="hm-tab" data-type="gewicht">⚖️ Gewicht</button>
+          <button class="hm-tab" data-type="slaap">😴 Slaap</button>
+        </div>
+        <div class="heatmap-outer">
+          <div class="hm-wrap">
+            <div class="hm-day-labels" id="hm-day-labels"></div>
+            <div>
+              <div class="hm-month-row" id="hm-month-row"></div>
+              <div class="hm-grid" id="hm-grid" style="display:flex;gap:3px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="hm-legend">
+          <span>Minder</span>
+          <div class="hm-leg-cells" id="hm-legend-cells"></div>
+          <span>Meer</span>
+          <span id="hm-stats" style="margin-left:16px;font-size:.7rem;color:var(--text-muted)"></span>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2 gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:16px">Badges</div>
+        <div class="badges-grid" id="badges-grid"></div>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:16px">Statistieken</div>
+        <div style="display:flex;flex-direction:column;gap:0" id="stats-overview"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== INSTELLINGEN ===== -->
+  <div class="view" id="view-instellingen">
+    <div class="page-header">
+      <div><div class="page-title">⚙️ <em>Instellingen</em></div><div class="page-subtitle">Doelen en configuratie</div></div>
+    </div>
+    <div class="grid-2 gap-section" style="align-items:start">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="card">
+          <div class="card-label" style="margin-bottom:18px">Doelen & profiel</div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="input-group">
+              <label>Jouw naam</label>
+              <input type="text" id="set-naam" placeholder="bijv. Joost">
+            </div>
+            <div class="input-row">
+              <div class="input-group">
+                <label>Startgewicht (kg)</label>
+                <input type="number" id="set-startgewicht" placeholder="90" step="0.1">
+              </div>
+              <div class="input-group">
+                <label>Doelgewicht (kg)</label>
+                <input type="number" id="set-doelgewicht" placeholder="80" step="0.1">
+              </div>
+            </div>
+            <div class="input-row">
+              <div class="input-group">
+                <label>Lengte (cm)</label>
+                <input type="number" id="set-lengte" placeholder="175" min="100" max="250">
+              </div>
+              <div class="input-group">
+                <label>Waterdoel (glazen/dag)</label>
+                <input type="number" id="set-waterdoel" placeholder="8" min="1" max="20">
+              </div>
+            </div>
+            <div class="input-group">
+              <label>Weekdoel sport (trainingen/week)</label>
+              <input type="number" id="set-sportdoel" placeholder="3" min="1" max="14">
+            </div>
+            <div class="input-group">
+              <label>Mijn motivatie</label>
+              <input type="text" id="set-motivatie" placeholder="bijv. voor mijn kinderen, meer energie...">
+              <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px">Wordt zichtbaar op het dashboard als herinnering.</div>
+            </div>
+            <button class="btn" onclick="saveSettings()">✓ Doelen opslaan</button>
+          </div>
+        </div>
+
+        <!-- TERUGKERENDE SPORT -->
+        <div class="card">
+          <div class="card-label" style="margin-bottom:4px">🔄 Terugkerende trainingen</div>
+          <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px;line-height:1.5">Automatisch voorinvullen als je de app opent op die dag.</p>
+          <div id="herhaling-list" style="margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+            <div class="input-group" style="flex:1;min-width:90px">
+              <label>Dag</label>
+              <select id="h-dag">
+                <option value="1">Maandag</option><option value="2">Dinsdag</option>
+                <option value="3">Woensdag</option><option value="4">Donderdag</option>
+                <option value="5">Vrijdag</option><option value="6">Zaterdag</option>
+                <option value="0">Zondag</option>
+              </select>
+            </div>
+            <div class="input-group" style="flex:1;min-width:100px">
+              <label>Sport</label>
+              <select id="h-sport">
+                <option>Hardlopen</option><option>Fietsen</option><option>Zwemmen</option>
+                <option>Krachttraining</option><option>Wandelen</option><option>Schaatsen</option><option>Anders</option>
+              </select>
+            </div>
+            <div class="input-group" style="flex:0 0 80px">
+              <label>Duur (min)</label>
+              <input type="number" id="h-duur" placeholder="45" min="5" max="300">
+            </div>
+            <button class="btn gold" onclick="addHerhaling()" style="padding:9px 16px;align-self:flex-end">＋ Toevoegen</button>
+          </div>
+        </div>
+
+        <!-- WEERGAVE -->
+        <div class="card">
+          <div class="card-label" style="margin-bottom:4px">Weergave</div>
+          <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:16px">Zet onderdelen aan of uit. Uitgeschakelde onderdelen verdwijnen uit het dashboard en de navigatie.</p>
+
+          <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:8px">Modules</div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">⚖️ Gewicht</div><div class="toggle-desc">Gewichtsregistratie en grafiek</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-gewicht" data-key="gewicht" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">🏃 Sport</div><div class="toggle-desc">Trainingen bijhouden</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-sport" data-key="sport" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">💧 Water</div><div class="toggle-desc">Waterinname bijhouden</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-water" data-key="water" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">😴 Slaap</div><div class="toggle-desc">Slaapuren en kwaliteit</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-slaap" data-key="slaap" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+
+          <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin:16px 0 8px">Dashboard widgets</div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">✦ Snel toevoegen knoppen</div><div class="toggle-desc">+ knoppen in gewicht-, sport- en waterkaart</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-snel" data-key="snel" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">🔥 Streaks</div><div class="toggle-desc">Water en sport streakkaarten</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-streaks" data-key="streaks" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">🎯 Voortgang naar doel</div><div class="toggle-desc">Progressiebalk gewichtsdoel</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-voortgang" data-key="voortgang" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">🏅 Weekdoel sport</div><div class="toggle-desc">Ringdiagram weekdoel</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-weekdoel" data-key="weekdoel" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">📏 BMI</div><div class="toggle-desc">Body Mass Index kaart</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-bmi" data-key="bmi" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="card">
+          <div class="card-label" style="margin-bottom:6px">☁ Firebase sync</div>
+          <p style="font-size:.8rem;color:var(--text-soft);margin-bottom:14px;line-height:1.6">Sync data naar Firebase zodat het op al je apparaten beschikbaar is.</p>
+          <div id="sync-status" class="sync-status idle"><div class="sync-dot"></div><span id="sync-status-text">Niet verbonden</span></div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="input-group">
+              <label>Firebase Database URL</label>
+              <input type="url" id="set-firebase-url" placeholder="https://mijnapp-default-rtdb.firebaseio.com">
+            </div>
+            <div class="input-group">
+              <label>Gebruikersnaam</label>
+              <input type="text" id="set-firebase-user" placeholder="bijv. joost">
+            </div>
+            <div class="btn-row">
+              <button class="btn sky" onclick="firebasePush()" style="flex:1">⬆ Upload</button>
+              <button class="btn secondary" onclick="firebasePull()" style="flex:1">⬇ Ophalen</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label" style="margin-bottom:10px">Exporteren</div>
+          <p style="font-size:.83rem;color:var(--text-soft);line-height:1.6;margin-bottom:14px">Download al je data als CSV voor Excel of Google Sheets.</p>
+          <button class="btn sage" onclick="exportCSV()" style="width:100%">⬇ Download alle data als CSV</button>
+        </div>
+
+        <div class="card">
+          <div class="card-label" style="margin-bottom:10px">Gevaarzone</div>
+          <p style="font-size:.83rem;color:var(--text-soft);line-height:1.6;margin-bottom:14px">Alle data wordt lokaal opgeslagen in je browser.</p>
+          <button class="btn danger" onclick="clearAll()" style="width:100%">🗑 Alle data wissen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ===== MOBIELE NAVIGATIE ===== -->
+<nav class="mobile-nav" id="mobile-nav">
+  <button class="mob-nav-btn active" id="mobnav-dashboard" onclick="mobNav('dashboard')">
+    <span class="mob-nav-icon">🏠</span><span class="mob-nav-label">Dashboard</span>
+  </button>
+  <button class="mob-nav-btn" id="mobnav-gewicht" onclick="mobNav('gewicht')">
+    <span class="mob-nav-icon">⚖️</span><span class="mob-nav-label">Gewicht</span>
+  </button>
+  <button class="mob-nav-btn" id="mobnav-sport" onclick="mobNav('sport')">
+    <span class="mob-nav-icon">🏃</span><span class="mob-nav-label">Sport</span>
+  </button>
+  <button class="mob-nav-btn" id="mobnav-water" onclick="mobNav('water')">
+    <span class="mob-nav-icon">💧</span><span class="mob-nav-label">Water</span>
+  </button>
+  <button class="mob-nav-btn" id="mobnav-meer" onclick="mobNav('meer')">
+    <span class="mob-nav-icon">···</span><span class="mob-nav-label">Meer</span>
+  </button>
+</nav>
+
+<!-- FAB knop -->
+<button class="fab-btn" id="fab-btn" onclick="toggleFabSheet()">＋</button>
+
+<!-- Overlay -->
+<div class="mob-overlay" id="mob-overlay" onclick="closeFabSheet()"></div>
+
+<!-- Bottom sheet snel toevoegen -->
+<div class="mob-sheet" id="mob-sheet">
+  <div class="mob-sheet-handle"></div>
+  <div class="mob-sheet-title">Snel toevoegen</div>
+  <div class="mob-sheet-tabs">
+    <button class="mob-tab active" id="fabtab-gewicht" onclick="switchFabTab('gewicht')">⚖️ Gewicht</button>
+    <button class="mob-tab" id="fabtab-sport" onclick="switchFabTab('sport')">🏃 Sport</button>
+    <button class="mob-tab" id="fabtab-water" onclick="switchFabTab('water')">💧 Water</button>
+    <button class="mob-tab" id="fabtab-slaap" onclick="switchFabTab('slaap')">😴 Slaap</button>
+  </div>
+  <div id="fab-content-gewicht" class="fab-panel">
+    <input type="number" id="fab-gew-val" placeholder="Gewicht (kg)" step="0.1" class="mob-input">
+    <input type="date" id="fab-gew-datum" class="mob-input">
+    <input type="text" id="fab-gew-note" placeholder="Notitie (optioneel)" class="mob-input">
+    <button class="mob-save-btn" onclick="fabSaveGewicht()">Opslaan</button>
+  </div>
+  <div id="fab-content-sport" class="fab-panel" style="display:none">
+    <div class="mob-sport-pills" id="fab-sport-pills">
+      <div class="mob-sport-pill selected" data-sport="Hardlopen">🏃</div>
+      <div class="mob-sport-pill" data-sport="Fietsen">🚴</div>
+      <div class="mob-sport-pill" data-sport="Zwemmen">🏊</div>
+      <div class="mob-sport-pill" data-sport="Krachttraining">💪</div>
+      <div class="mob-sport-pill" data-sport="Wandelen">🚶</div>
+      <div class="mob-sport-pill" data-sport="Schaatsen">⛸️</div>
+      <div class="mob-sport-pill" data-sport="Anders">✨</div>
+    </div>
+    <input type="number" id="fab-sport-duur" placeholder="Duur (min)" class="mob-input">
+    <button class="mob-save-btn" onclick="fabSaveSport()">Opslaan</button>
+  </div>
+  <div id="fab-content-water" class="fab-panel" style="display:none">
+    <div style="font-size:.9rem;color:var(--text-soft);margin-bottom:12px">Glas toevoegen aan vandaag</div>
+    <button class="mob-save-btn" onclick="fabSaveWater()">＋ Glas toevoegen</button>
+  </div>
+  <div id="fab-content-slaap" class="fab-panel" style="display:none">
+    <input type="number" id="fab-slaap-uren" placeholder="Uren (bijv. 7.5)" step="0.5" class="mob-input">
+    <input type="date" id="fab-slaap-datum" class="mob-input">
+    <button class="mob-save-btn" onclick="fabSaveSlaap()">Opslaan</button>
+  </div>
+</div>
+
+<!-- ===== MOBILE NAV ===== -->
+<nav class="mobile-nav" id="mobile-nav">
+  <button class="mob-nav-btn active" id="mnav-dashboard" onclick="switchTab('dashboard')">
+    <span class="mob-nav-icon">🏠</span><span class="mob-nav-lbl">Dashboard</span>
+  </button>
+  <button class="mob-nav-btn" id="mnav-gewicht" onclick="switchTab('gewicht')">
+    <span class="mob-nav-icon">⚖️</span><span class="mob-nav-lbl">Gewicht</span>
+  </button>
+  <button class="mob-nav-btn" id="mnav-sport" onclick="switchTab('sport')">
+    <span class="mob-nav-icon">🏃</span><span class="mob-nav-lbl">Sport</span>
+  </button>
+  <button class="mob-nav-btn" id="mnav-water" onclick="switchTab('water')">
+    <span class="mob-nav-icon">💧</span><span class="mob-nav-lbl">Water</span>
+  </button>
+  <button class="mob-nav-btn" id="mnav-meer" onclick="openMeerSheet()">
+    <span class="mob-nav-icon">···</span><span class="mob-nav-lbl">Meer</span>
+  </button>
+</nav>
+
+<!-- FAB knop -->
+<button class="fab-btn" id="fab-btn" onclick="openFabSheet()">＋</button>
+
+<!-- Overlay -->
+<div class="mob-overlay" id="mob-overlay" onclick="closeMobSheets()"></div>
+
+<!-- FAB sheet -->
+<div class="mob-sheet" id="mob-fab-sheet">
+  <div class="mob-handle"></div>
+  <div class="mob-sheet-title">Wat wil je toevoegen?</div>
+  <div id="mob-fab-content"></div>
+</div>
+
+<!-- Meer sheet -->
+<div class="mob-sheet" id="mob-meer-sheet">
+  <div class="mob-handle"></div>
+  <div class="mob-sheet-title">Meer</div>
+  <div class="mob-more-btn" onclick="switchTab('slaap');closeMobSheets()">
+    <div class="mob-more-icon">😴</div><span>Slaap</span>
+  </div>
+  <div class="mob-more-btn" onclick="switchTab('prestaties');closeMobSheets()">
+    <div class="mob-more-icon">🏅</div><span>Prestaties</span>
+  </div>
+  <div class="mob-more-btn" onclick="switchTab('instellingen');closeMobSheets()">
+    <div class="mob-more-icon">⚙️</div><span>Instellingen</span>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ===== DATA =====
+const KEYS={gewicht:'tracker_gewicht',sport:'tracker_sport',water:'tracker_water',slaap:'tracker_slaap',settings:'tracker_settings'};
+function load(k){try{return JSON.parse(localStorage.getItem(k))||[];}catch{return[];}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v));}
+function loadSettings(){try{return JSON.parse(localStorage.getItem(KEYS.settings))||{};}catch{return{};}}
+function saveSettingsData(s){localStorage.setItem(KEYS.settings,JSON.stringify(s));}
+
+// ===== DATE =====
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function fmtDate(d){const[y,m,day]=d.split('-');return `${day}-${m}-${y}`;}
+function weekKey(ds){const d=new Date(ds),s=new Date(d);s.setDate(d.getDate()-d.getDay()+1);return s.toISOString().slice(0,10);}
+function last7Days(){const a=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);a.push(d.toISOString().slice(0,10));}return a;}
+function thisWeekDays(){
+  const today=new Date(),dow=today.getDay(),mon=new Date(today);
+  mon.setDate(today.getDate()-(dow===0?6:dow-1));
+  const days=[];for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);days.push(d.toISOString().slice(0,10));}
+  return days;
+}
+
+// ===== NAV =====
+function switchTab(tab){
+  const tabs=['dashboard','gewicht','sport','water','slaap','prestaties','instellingen'];
+  document.querySelectorAll('.nav-item').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const view=document.getElementById('view-'+tab);
+  if(view) view.classList.add('active');
+  // Sync mobile nav
+  document.querySelectorAll('.mob-nav-btn').forEach(b=>b.classList.remove('active'));
+  const mnavMap={dashboard:'dashboard',gewicht:'gewicht',sport:'sport',water:'water',slaap:'meer',prestaties:'meer',instellingen:'meer'};
+  const mBtn=document.getElementById('mnav-'+(mnavMap[tab]||tab));
+  if(mBtn) mBtn.classList.add('active');
+  // Scroll content area back to top
+  const content=document.querySelector('.content');
+  if(content) content.scrollTop=0;
+  if(tab==='dashboard') renderDashboard();
+  if(tab==='gewicht') renderGewicht();
+  if(tab==='sport') renderSport();
+  if(tab==='water') renderWater();
+  if(tab==='slaap') renderSlaap();
+  if(tab==='prestaties') renderPrestaties();
+  if(tab==='instellingen') renderSettings();
+  // Mobiele nav bijwerken
+  const mobTabs=['dashboard','gewicht','sport','water'];
+  document.querySelectorAll('.mob-nav-btn').forEach(b=>b.classList.remove('active'));
+  const mobBtn=document.getElementById('mobnav-'+tab);
+  if(mobBtn) mobBtn.classList.add('active');
+  else { const meer=document.getElementById('mobnav-meer'); if(meer) meer.classList.add('active'); }
+}
+
+// ===== CHARTS =====
+let charts={};
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function chartDefaults(){
+  return{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',borderColor:'#e8d5be',borderWidth:1,
+      titleColor:'#3d2b1f',bodyColor:'#7a5c48',padding:12,cornerRadius:10,
+      titleFont:{family:'Playfair Display',size:13},bodyFont:{family:'Nunito',size:12}}},
+    scales:{
+      x:{grid:{color:'rgba(232,213,190,0.4)'},ticks:{color:'#b89880',font:{family:'Nunito',size:11}}},
+      y:{grid:{color:'rgba(232,213,190,0.4)'},ticks:{color:'#b89880',font:{family:'Nunito',size:11}}}
+    }};
+}
+
+// ===== STREAKS =====
+function calcWaterStreak(){
+  const s=loadSettings(),goal=parseInt(s.waterdoel)||8,wData=load(KEYS.water);
+  let streak=0,d=new Date();
+  for(let i=0;i<365;i++){
+    const ds=d.toISOString().slice(0,10),e=wData.find(x=>x.datum===ds);
+    if(e&&e.glazen>=goal) streak++;
+    else if(i>0) break;
+    d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
+function calcSportStreak(){
+  const sData=load(KEYS.sport);
+  let streak=0,d=new Date();
+  d.setDate(d.getDate()-1);
+  for(let i=0;i<365;i++){
+    const ds=d.toISOString().slice(0,10);
+    if(sData.some(x=>x.datum===ds)) streak++;
+    else break;
+    d.setDate(d.getDate()-1);
+  }
+  if(sData.some(x=>x.datum===todayStr())) streak++;
+  return streak;
+}
+
+// ===== BMI =====
+function calcBMI(w,hcm){if(!w||!hcm)return null;const h=hcm/100;return Math.round(w/(h*h)*10)/10;}
+function bmiCat(bmi){
+  if(bmi<18.5) return{label:'Ondergewicht',color:'#6ab0e8',cls:'badge-neutral'};
+  if(bmi<25)   return{label:'Gezond gewicht',color:'#7ac97a',cls:'badge-good'};
+  if(bmi<30)   return{label:'Overgewicht',color:'#f0c040',cls:'badge-gold'};
+  if(bmi<35)   return{label:'Obesitas I',color:'#e88040',cls:'badge-bad'};
+  return{label:'Obesitas II+',color:'#e84040',cls:'badge-bad'};
+}
+function renderBMI(latest){
+  const s=loadSettings(),bmi=calcBMI(latest,s.lengte);
+  ['bmi-val','bmi-val'].forEach(()=>{});
+  const valEl=document.getElementById('bmi-val');
+  const catEl=document.getElementById('bmi-cat');
+  const subEl=document.getElementById('bmi-sub');
+  const badgeEl=document.getElementById('bmi-badge');
+  const circleEl=document.getElementById('bmi-circle');
+  const ptrEl=document.getElementById('bmi-pointer');
+  const statEl=document.getElementById('dash-bmi-stat');
+  const statBadge=document.getElementById('dash-bmi-badge');
+  if(!bmi){
+    valEl.textContent='—';catEl.textContent='Stel lengte in';subEl.textContent='Ga naar Instellingen.';
+    badgeEl.textContent='—';badgeEl.className='badge badge-neutral';
+    if(statEl) statEl.textContent='—';
+    return;
+  }
+  const cat=bmiCat(bmi);
+  valEl.textContent=bmi;catEl.textContent=cat.label;
+  badgeEl.textContent=cat.label;badgeEl.className='badge '+cat.cls;
+  circleEl.style.borderColor=cat.color;circleEl.style.background=cat.color+'22';
+  const pct=Math.max(0,Math.min(100,Math.round((bmi-10)/35*100)));
+  ptrEl.textContent='▲ BMI '+bmi;ptrEl.style.paddingLeft=`calc(${pct}% - 20px)`;
+  if(s.doelgewicht&&s.lengte){
+    const tBMI=calcBMI(s.doelgewicht,s.lengte);
+    subEl.textContent=`Doel ${s.doelgewicht}kg → BMI ${tBMI} (${bmiCat(tBMI).label})`;
+  } else subEl.textContent='Gezond: 18.5 – 25';
+  if(statEl){statEl.textContent=bmi;statBadge.textContent=cat.label;statBadge.className='stat-delta badge '+cat.cls;}
+}
+
+// ===== BADGES =====
+const BADGE_DEFS=[
+  {id:'eerste_meting',emoji:'📏',name:'Eerste stap',desc:'Eerste gewichtsmeting',check:()=>load(KEYS.gewicht).length>=1},
+  {id:'eerste_sport',emoji:'🌱',name:'Op dreef',desc:'Eerste training gelogd',check:()=>load(KEYS.sport).length>=1},
+  {id:'10_trainingen',emoji:'💪',name:'10 trainingen',desc:'10 trainingen voltooid',check:()=>load(KEYS.sport).length>=10},
+  {id:'25_trainingen',emoji:'🏅',name:'25 trainingen',desc:'25 trainingen voltooid',check:()=>load(KEYS.sport).length>=25},
+  {id:'eerste_kilo',emoji:'⚖️',name:'Eerste kilo',desc:'1 kg afgevallen',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),start=s.startgewicht||(g.length>0?g[0].val:null),latest=g.length>0?g[g.length-1].val:null;return start&&latest&&(start-latest)>=1;}},
+  {id:'vijf_kilo',emoji:'🏆',name:'5 kilo eraf!',desc:'5 kg afgevallen',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),start=s.startgewicht||(g.length>0?g[0].val:null),latest=g.length>0?g[g.length-1].val:null;return start&&latest&&(start-latest)>=5;}},
+  {id:'doel_bereikt',emoji:'🌟',name:'Doel bereikt!',desc:'Doelgewicht behaald',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),latest=g.length>0?g[g.length-1].val:null;return s.doelgewicht&&latest&&latest<=s.doelgewicht;}},
+  {id:'water_3d',emoji:'💧',name:'Hydratatie',desc:'3 dagen waterdoel gehaald',check:()=>calcWaterStreak()>=3},
+  {id:'water_7d',emoji:'🌊',name:'Waterkampioen',desc:'7 dagen op rij',check:()=>calcWaterStreak()>=7},
+  {id:'sport_3d',emoji:'🔥',name:'3 dagen actief',desc:'3 dagen op rij getraind',check:()=>calcSportStreak()>=3},
+  {id:'sport_7d',emoji:'⚡',name:'Week on fire!',desc:'7 dagen op rij getraind',check:()=>calcSportStreak()>=7},
+  {id:'gew_30',emoji:'📅',name:'Consistent',desc:'30 metingen gelogd',check:()=>load(KEYS.gewicht).length>=30},
+];
+
+// ===== EXPORT CSV =====
+function exportCSV(){
+  let csv='Datum,Type,Waarde,Eenheid,Notitie\n';
+  load(KEYS.gewicht).forEach(x=>{ csv+=`${x.datum},Gewicht,${x.val},kg,"${(x.note||'').replace(/"/g,'""')}"\n`; });
+  load(KEYS.sport).forEach(x=>{ csv+=`${x.datum},Sport (${x.sport}),${x.duur},minuten,"${(x.note||'').replace(/"/g,'""')}"\n`; });
+  load(KEYS.water).forEach(x=>{ csv+=`${x.datum},Water,${x.glazen},glazen,""\n`; });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download='welzijn_export.csv';a.click();
+}
+
+// ===== FIREBASE =====
+function getFirebaseConfig(){const s=loadSettings();return{url:(s.firebaseUrl||'').replace(/\/$/,''),user:s.firebaseUser||'user'};}
+function setSyncStatus(state,msg){const el=document.getElementById('sync-status'),txt=document.getElementById('sync-status-text');if(!el)return;el.className='sync-status '+state;txt.textContent=msg;}
+function saveFirebaseConfig(){
+  const s=loadSettings();
+  const fbUrl=document.getElementById('set-firebase-url').value.trim();
+  const fbUser=document.getElementById('set-firebase-user').value.trim();
+  if(fbUrl) s.firebaseUrl=fbUrl;
+  if(fbUser) s.firebaseUser=fbUser;
+  saveSettingsData(s);
+}
+async function firebasePush(){
+  saveFirebaseConfig();
+  const{url,user}=getFirebaseConfig();if(!url){alert('Voer eerst een Firebase Database URL in.');return;}
+  setSyncStatus('idle','Uploaden...');
+  try{
+    const payload={
+      gewicht:load(KEYS.gewicht),
+      sport:load(KEYS.sport),
+      water:load(KEYS.water),
+      slaap:load(KEYS.slaap),
+      settings:loadSettings()
+    };
+    const res=await fetch(`${url}/welzijn/${user}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!res.ok)throw new Error(res.statusText);
+    setSyncStatus('ok','✓ Geüpload om '+new Date().toLocaleTimeString('nl-NL'));
+  }catch(e){setSyncStatus('err','Fout: '+e.message);}
+}
+
+async function firebasePull(){
+  saveFirebaseConfig();
+  const{url,user}=getFirebaseConfig();if(!url){alert('Voer eerst een Firebase Database URL in.');return;}
+  setSyncStatus('idle','Ophalen...');
+  try{
+    const res=await fetch(`${url}/welzijn/${user}.json`);
+    if(!res.ok)throw new Error(res.statusText);
+    const data=await res.json();
+    if(!data){setSyncStatus('err','Geen data gevonden in Firebase.');return;}
+
+    // Data arrays — altijd overnemen
+    if(data.gewicht&&Array.isArray(data.gewicht)) save(KEYS.gewicht,data.gewicht);
+    if(data.sport&&Array.isArray(data.sport))   save(KEYS.sport,data.sport);
+    if(data.water&&Array.isArray(data.water))   save(KEYS.water,data.water);
+    if(data.slaap&&Array.isArray(data.slaap))   save(KEYS.slaap,data.slaap);
+    if(data.meetmomenten&&Array.isArray(data.meetmomenten)) saveMM(data.meetmomenten);
+
+    // Settings — slim samenvoegen: lokale waarden hebben voorrang boven lege Firebase-waarden
+    if(data.settings){
+      const local=loadSettings();
+      const remote=data.settings;
+      const merged={...remote};
+      // Bewaar lokale waarden als die bestaan en remote leeg/0 is
+      const preferLocal=['startgewicht','doelgewicht','lengte','naam'];
+      preferLocal.forEach(k=>{
+        if(local[k]) merged[k]=local[k];
+      });
+      // Firebase/user settings altijd meenemen
+      if(local.firebaseUrl) merged.firebaseUrl=local.firebaseUrl;
+      if(local.firebaseUser) merged.firebaseUser=local.firebaseUser;
+      saveSettingsData(merged);
+    }
+
+    setSyncStatus('ok','✓ Opgehaald om '+new Date().toLocaleTimeString('nl-NL'));
+    renderDashboard();
+    renderSettings();
+    showToast('✓ Data opgehaald van Firebase!');
+  }catch(e){setSyncStatus('err','Fout: '+e.message);}
+}
+
+// ===== GEWICHT =====
+function addGewicht(){
+  const val=parseFloat(document.getElementById('input-gewicht').value);
+  const datum=document.getElementById('input-gewicht-datum').value||todayStr();
+  const note=document.getElementById('input-gewicht-note').value.trim();
+  if(isNaN(val)||val<30||val>300){alert('Voer een geldig gewicht in');return;}
+  const data=load(KEYS.gewicht);data.push({id:Date.now(),datum,val,note});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.gewicht,data);
+  document.getElementById('input-gewicht').value='';document.getElementById('input-gewicht-note').value='';
+  savePop('dash-gewicht-chart');flashStat('stat-gewicht');
+  renderGewicht();renderDashboard();checkNewBadges();triggerAutoSync();
+}
+function deleteGewicht(id){save(KEYS.gewicht,load(KEYS.gewicht).filter(x=>x.id!==id));renderGewicht();renderDashboard();triggerAutoSync();}
+function renderGewicht(){
+  const data=load(KEYS.gewicht);
+  const log=document.getElementById('gewicht-log');
+  if(!data.length){log.innerHTML='<div class="empty-state"><span>🌸</span>Nog geen metingen</div>';return;}
+  log.innerHTML=[...data].reverse().map(x=>`
+    <div class="log-item"><div class="log-icon">⚖️</div>
+      <div class="log-item-left"><div class="log-date">${fmtDate(x.datum)}</div>
+        <div class="log-val">${x.val} kg</div>${x.note?`<div class="log-note">${x.note}</div>`:''}</div>
+      <button class="delete-btn" onclick="deleteGewicht(${x.id})">✕</button></div>`).join('');
+  destroyChart('gewichtChartFull');
+  if(data.length>0){
+    const ctx=document.getElementById('gewichtChartFull').getContext('2d');
+    const grad=ctx.createLinearGradient(0,0,0,260);grad.addColorStop(0,'rgba(200,149,74,0.18)');grad.addColorStop(1,'rgba(200,149,74,0)');
+    const cfg=chartDefaults();
+    charts['gewichtChartFull']=new Chart(ctx,{type:'line',data:{labels:data.map(x=>fmtDate(x.datum)),datasets:[{data:data.map(x=>x.val),borderColor:'#c8954a',backgroundColor:grad,borderWidth:2.5,pointBackgroundColor:'#c8954a',pointRadius:5,pointBorderColor:'#fff',pointBorderWidth:2,tension:0.4,fill:true}]},
+      options:{...cfg,scales:{...cfg.scales,y:{...cfg.scales.y,suggestedMin:Math.min(...data.map(x=>x.val))-3,suggestedMax:Math.max(...data.map(x=>x.val))+3}}}});
+  }
+  renderMeetmomentTijdlijn();
+}
+
+// ===== SPORT =====
+let selectedSport='Hardlopen';
+function initSportPills(){
+  document.querySelectorAll('#sport-pill-select .sport-pill').forEach(p=>{
+    p.addEventListener('click',()=>{document.querySelectorAll('#sport-pill-select .sport-pill').forEach(x=>x.classList.remove('selected'));p.classList.add('selected');selectedSport=p.dataset.sport;});
+  });
+  document.getElementById('input-sport-datum').value=todayStr();
+}
+function addSport(){
+  const duur=parseInt(document.getElementById('input-sport-duur').value);
+  const datum=document.getElementById('input-sport-datum').value||todayStr();
+  const note=document.getElementById('input-sport-note').value.trim();
+  if(isNaN(duur)||duur<1){alert('Voer een geldige duur in');return;}
+  const data=load(KEYS.sport);data.push({id:Date.now(),datum,sport:selectedSport,duur,note});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.sport,data);
+  document.getElementById('input-sport-duur').value='';document.getElementById('input-sport-note').value='';
+  savePop('dash-sport-chart');flashStat('stat-sport');
+  renderSport();renderDashboard();checkNewBadges();triggerAutoSync();
+}
+function deleteSport(id){save(KEYS.sport,load(KEYS.sport).filter(x=>x.id!==id));renderSport();renderDashboard();triggerAutoSync();}
+function renderSport(){
+  const data=load(KEYS.sport);
+  const monthStr=new Date().toISOString().slice(0,7);
+  const thisMonth=data.filter(x=>x.datum.startsWith(monthStr));
+  document.getElementById('sport-maand-count').textContent=`${thisMonth.length} training${thisMonth.length!==1?'en':''}`;
+  const log=document.getElementById('sport-log');
+  const em={'Hardlopen':'🏃','Fietsen':'🚴','Zwemmen':'🏊','Krachttraining':'💪','Wandelen':'🚶','Schaatsen':'⛸️','Anders':'✨'};
+  if(!data.length){log.innerHTML='<div class="empty-state"><span>🌿</span>Nog geen trainingen</div>';return;}
+  log.innerHTML=[...data].reverse().slice(0,30).map(x=>`
+    <div class="log-item"><div class="log-icon">${em[x.sport]||'🏃'}</div>
+      <div class="log-item-left"><div class="log-date">${fmtDate(x.datum)}</div>
+        <div class="log-val">${x.sport} · ${x.duur} min</div>${x.note?`<div class="log-note">${x.note}</div>`:''}</div>
+      <button class="delete-btn" onclick="deleteSport(${x.id})">✕</button></div>`).join('');
+  destroyChart('sportChartFull');
+  const days7=thisWeekDays(),todayIso=todayStr(),sCounts=days7.map(d=>data.filter(x=>x.datum===d).length);
+  const ctx2=document.getElementById('sportChartFull').getContext('2d'),cfg2=chartDefaults();
+  charts['sportChartFull']=new Chart(ctx2,{type:'bar',
+    data:{labels:days7.map(d=>{const p=d.split('-');return `${p[2]}/${p[1]}`;}),
+      datasets:[{data:sCounts,backgroundColor:days7.map(d=>d===todayIso?'rgba(196,122,122,0.8)':d>todayIso?'rgba(196,122,122,0.1)':'rgba(196,122,122,0.4)'),borderColor:days7.map(d=>d>todayIso?'rgba(196,122,122,0.2)':'#c47a7a'),borderWidth:1.5,borderRadius:8}]},
+    options:{...cfg2,scales:{...cfg2.scales,y:{...cfg2.scales.y,beginAtZero:true,ticks:{...cfg2.scales.y.ticks,stepSize:1}}}}});
+}
+
+// ===== WATER =====
+function getWaterToday(){const e=load(KEYS.water).find(x=>x.datum===todayStr());return e?e.glazen:0;}
+function setWaterToday(n){const d=load(KEYS.water).filter(x=>x.datum!==todayStr());d.push({datum:todayStr(),glazen:n});save(KEYS.water,d);}
+function renderWaterCups(cid,filled,goal,interactive){
+  let h='';for(let i=0;i<goal;i++){const f=i<filled;h+=`<div class="cup${f?' filled':''}" ${interactive?`onclick="toggleCup(${i+1})"`:''}></div>`;}
+  document.getElementById(cid).innerHTML=h;
+}
+function toggleCup(idx){
+  const goal=parseInt(loadSettings().waterdoel)||8,cur=getWaterToday();
+  setWaterToday(Math.max(0,Math.min(idx<=cur?idx-1:idx,goal)));renderWater();renderDashboard();triggerAutoSync();
+}
+function resetWater(){setWaterToday(0);renderWater();renderDashboard();}
+function renderWater(){
+  const goal=parseInt(loadSettings().waterdoel)||8,filled=getWaterToday(),pct=Math.min(100,Math.round(filled/goal*100));
+  document.getElementById('water-val').textContent=filled;
+  document.getElementById('water-doel-display').textContent=goal;
+  document.getElementById('water-doel-text').textContent=goal;
+  document.getElementById('water-progress').style.width=pct+'%';
+  const b2=document.getElementById('water-pct-badge2');
+  if(b2){b2.textContent=pct+'%';b2.className='badge '+(pct>=100?'badge-good':pct>50?'badge-gold':'badge-neutral');}
+  renderWaterCups('water-cups',filled,goal,true);
+  destroyChart('waterChart');
+  const days=last7Days(),counts=days.map(d=>{const e=load(KEYS.water).find(x=>x.datum===d);return e?e.glazen:0;});
+  const ctx=document.getElementById('waterChart').getContext('2d'),cfg=chartDefaults();
+  const grad=ctx.createLinearGradient(0,0,0,200);grad.addColorStop(0,'rgba(122,158,126,0.45)');grad.addColorStop(1,'rgba(122,158,126,0.05)');
+  charts['waterChart']=new Chart(ctx,{type:'bar',data:{labels:days.map(d=>{const p=d.split('-');return `${p[2]}/${p[1]}`;}),datasets:[{data:counts,backgroundColor:counts.map((_,i)=>i===6?'rgba(122,158,126,0.75)':'rgba(122,158,126,0.3)'),borderColor:'#7a9e7e',borderWidth:1.5,borderRadius:8}]},
+    options:{...cfg,scales:{...cfg.scales,y:{...cfg.scales.y,beginAtZero:true,max:Math.max(goal+1,...counts,8),ticks:{...cfg.scales.y.ticks,stepSize:1}}}}});
+}
+
+// ===== PRESTATIES =====
+function renderPrestaties(){
+  renderHeatmap();
+  const earned=BADGE_DEFS.filter(b=>b.check()),locked=BADGE_DEFS.filter(b=>!b.check());
+  document.getElementById('badges-earned-count').textContent=`${earned.length} / ${BADGE_DEFS.length} behaald`;
+  document.getElementById('badges-grid').innerHTML=[...earned,...locked].map(b=>`
+    <div class="badge-item ${b.check()?'earned':'locked'}">
+      <span class="badge-emoji">${b.emoji}</span>
+      <div class="badge-name">${b.name}</div>
+      <div class="badge-desc">${b.desc}</div></div>`).join('');
+  const gData=load(KEYS.gewicht),sData=load(KEYS.sport),s=loadSettings();
+  const start=s.startgewicht||(gData.length>0?Math.max(...gData.map(x=>x.val)):null);
+  const latest=gData.length>0?gData[gData.length-1].val:null;
+  const totMin=sData.reduce((a,x)=>a+x.duur,0);
+  const stats=[
+    {label:'Totaal afgevallen',val:start&&latest?(start-latest).toFixed(1)+' kg':'—',icon:'⚖️'},
+    {label:'Totaal trainingen',val:sData.length,icon:'🏃'},
+    {label:'Totaal sporttijd',val:totMin>0?`${Math.floor(totMin/60)}u ${totMin%60}min`:'—',icon:'⏱'},
+    {label:'Water streak',val:calcWaterStreak()+' dagen',icon:'💧'},
+    {label:'Sport streak',val:calcSportStreak()+' dagen',icon:'🔥'},
+    {label:'Gewichtsmetingen',val:gData.length,icon:'📏'},
+  ];
+  document.getElementById('stats-overview').innerHTML=stats.map(st=>`
+    <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--border-light)">
+      <div style="font-size:1.4rem;width:34px;text-align:center">${st.icon}</div>
+      <div style="flex:1;font-size:.88rem;color:var(--text-soft)">${st.label}</div>
+      <div style="font-family:var(--font-head);font-size:1.1rem;color:var(--burgundy)">${st.val}</div></div>`).join('');
+}
+
+// ===== SETTINGS =====
+function renderSettings(){
+  try{
+    const s=loadSettings();
+    if(s.naam) document.getElementById('set-naam').value=s.naam;
+    if(s.startgewicht) document.getElementById('set-startgewicht').value=s.startgewicht;
+    if(s.doelgewicht) document.getElementById('set-doelgewicht').value=s.doelgewicht;
+    if(s.lengte) document.getElementById('set-lengte').value=s.lengte;
+    const wdEl=document.getElementById('set-waterdoel');
+    const sdEl=document.getElementById('set-sportdoel');
+    if(wdEl) wdEl.value=s.waterdoel||8;
+    if(sdEl) sdEl.value=s.sportdoel||3;
+    if(s.firebaseUrl){ const el=document.getElementById('set-firebase-url');if(el) el.value=s.firebaseUrl; }
+    if(s.firebaseUser){ const el=document.getElementById('set-firebase-user');if(el) el.value=s.firebaseUser; }
+    const motEl=document.getElementById('set-motivatie');
+    if(motEl&&s.motivatie) motEl.value=s.motivatie;
+    renderHerhalingList();
+    const v=getVis();
+    ['gewicht','sport','water','slaap','snel','streaks','voortgang','weekdoel','bmi'].forEach(k=>{
+      const el=document.getElementById('tog-'+k);
+      if(el) el.checked=v[k];
+    });
+  }catch(e){console.error('renderSettings error:',e);}
+}
+function saveSettings(){
+  const s=loadSettings();
+  const naam=document.getElementById('set-naam').value.trim();
+  const start=parseFloat(document.getElementById('set-startgewicht').value);
+  const doel=parseFloat(document.getElementById('set-doelgewicht').value);
+  const lengte=parseFloat(document.getElementById('set-lengte').value);
+  const water=parseInt(document.getElementById('set-waterdoel').value)||8;
+  const sportdoel=parseInt(document.getElementById('set-sportdoel').value)||3;
+  const fbUrl=document.getElementById('set-firebase-url').value.trim();
+  const fbUser=document.getElementById('set-firebase-user').value.trim();
+  if(naam) s.naam=naam;
+  if(!isNaN(start)) s.startgewicht=start;if(!isNaN(doel)) s.doelgewicht=doel;
+  if(!isNaN(lengte)&&lengte>0) s.lengte=lengte;
+  s.waterdoel=water;s.sportdoel=sportdoel;if(fbUrl) s.firebaseUrl=fbUrl;if(fbUser) s.firebaseUser=fbUser;
+  const motEl=document.getElementById('set-motivatie');
+  if(motEl) s.motivatie=motEl.value.trim();
+  saveSettingsData(s);renderDashboard();renderMotivatie();applyVisibility();triggerAutoSync();alert('✓ Instellingen opgeslagen!');
+}
+function clearAll(){
+  if(!confirm('Wil je echt alle data wissen?')) return;
+  Object.values(KEYS).forEach(k=>localStorage.removeItem(k));renderDashboard();renderSettings();
+}
+
+// ===== QUICK ADD =====
+let qSelectedSport='Hardlopen';
+function initQuickSportPills(){
+  document.querySelectorAll('#q-sport-pills .q-sport-pill').forEach(p=>{
+    p.addEventListener('click',()=>{document.querySelectorAll('#q-sport-pills .q-sport-pill').forEach(x=>x.classList.remove('selected'));p.classList.add('selected');qSelectedSport=p.dataset.sport;});
+  });
+}
+function toggleQuick(type){
+  const form=document.getElementById('qform-'+type);
+  const toggleIcon=document.getElementById('qtoggle-'+type);
+  if(!form) return;
+  const isOpen=form.classList.contains('open');
+  // close all
+  document.querySelectorAll('.quick-form').forEach(f=>f.classList.remove('open'));
+  document.querySelectorAll('[id^="qtoggle-"]').forEach(t=>{t.style.transform='';});
+  if(!isOpen){
+    form.classList.add('open');
+    if(toggleIcon) toggleIcon.style.transform='rotate(45deg)';
+  }
+}
+function quickAddGewicht(){
+  const val=parseFloat(document.getElementById('q-gewicht-val').value);
+  const datum=document.getElementById('q-gewicht-datum').value||todayStr();
+  const note=document.getElementById('q-gewicht-note').value.trim();
+  if(isNaN(val)||val<30||val>300){alert('Voer een geldig gewicht in');return;}
+  const data=load(KEYS.gewicht);data.push({id:Date.now(),datum,val,note});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.gewicht,data);
+  document.getElementById('q-gewicht-val').value='';document.getElementById('q-gewicht-note').value='';
+  toggleQuick('__close');savePop('dash-gewicht-chart');flashStat('stat-gewicht');renderDashboard();showToast('⚖️ '+val+' kg opgeslagen ('+fmtDate(datum)+')');checkNewBadges();triggerAutoSync();
+}
+function quickAddSport(){
+  const duur=parseInt(document.getElementById('q-sport-duur').value);
+  const note=document.getElementById('q-sport-note').value.trim();
+  if(isNaN(duur)||duur<1){alert('Voer een geldige duur in');return;}
+  const data=load(KEYS.sport);data.push({id:Date.now(),datum:todayStr(),sport:qSelectedSport,duur,note});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.sport,data);
+  document.getElementById('q-sport-duur').value='';document.getElementById('q-sport-note').value='';
+  toggleQuick('__close');savePop('dash-sport-chart');flashStat('stat-sport');renderDashboard();showToast('🏃 '+qSelectedSport+' '+duur+' min opgeslagen');checkNewBadges();triggerAutoSync();
+}
+function quickAddWater(){
+  const goal=parseInt(loadSettings().waterdoel)||8,current=getWaterToday();
+  if(current>=goal){showToast('💧 Dagdoel al bereikt! 🎉');return;}
+  setWaterToday(current+1);flashStat('stat-water');renderDashboard();showToast('💧 Glas gelogd! ('+(current+1)+'/'+goal+')');checkNewBadges();
+}
+function updateQuickWaterCount(){
+  const goal=parseInt(loadSettings().waterdoel)||8,filled=getWaterToday();
+  const el=document.getElementById('q-water-count');if(el) el.textContent=filled+' / '+goal;
+}
+
+// ===== TOAST =====
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';
+    t.style.cssText='position:fixed;bottom:28px;right:32px;background:var(--burgundy);color:#fff;padding:11px 24px;border-radius:12px;font-family:var(--font-body);font-size:.88rem;font-weight:700;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(122,48,48,.4);transform:translateY(10px)';
+    document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';t.style.transform='translateY(0)';
+  clearTimeout(t._timer);t._timer=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(10px)';},2500);
+}
+
+// ===== QUOTES =====
+const QUOTES=[
+  {text:'Kleine stappen tellen — jij doet het geweldig!', icon:'🌸'},
+  {text:'Elke dag een beetje beter dan gisteren.', icon:'💪'},
+  {text:'Consistentie is krachtiger dan perfectie.', icon:'✨'},
+  {text:'Je bent sterker dan je denkt.', icon:'🌟'},
+  {text:'Vandaag is een nieuwe kans. Pak hem!', icon:'🌅'},
+  {text:'Geniet van het proces — de reis is het doel.', icon:'🎯'},
+  {text:'Jouw lichaam houdt van jou. Zorg er goed voor.', icon:'🌿'},
+  {text:'Rust is ook onderdeel van vooruitgang.', icon:'🍃'},
+  {text:'Eén goed besluit vandaag is genoeg.', icon:'🌼'},
+  {text:'Het gaat niet om snel, maar om vol te houden.', icon:'🐢'},
+  {text:'Trots zijn op jezelf kost niets — doe het vaker.', icon:'🥇'},
+  {text:'Beweging is medicijn voor lichaam én geest.', icon:'🏃'},
+  {text:'Water drinken is zelfzorg in de eenvoudigste vorm.', icon:'💧'},
+  {text:'Elke meting is bewijs dat je bezig bent.', icon:'📏'},
+  {text:'Goed begonnen is half gewonnen — begin vandaag.', icon:'🚀'},
+  {text:'Je hoeft niet perfect te zijn om vooruit te gaan.', icon:'🌈'},
+  {text:'Succes is de som van kleine dagelijkse inspanningen.', icon:'🔥'},
+  {text:'Vergeet gisteren niet, maar focus op vandaag.', icon:'☀️'},
+  {text:'Een stap terug is nog steeds op de weg vooruit.', icon:'🛤️'},
+  {text:'Het beste moment om te starten was gisteren. Nu is het op één na beste.', icon:'⏰'},
+  {text:'Jij bent het waard om goed voor jezelf te zorgen.', icon:'💖'},
+  {text:'Gezondheid is geen bestemming — het is een leefstijl.', icon:'🍀'},
+  {text:'Discipline is kiezen wat je wilt meest, boven wat je nu wilt.', icon:'🧠'},
+  {text:'Elke glas water is een cadeautje aan je toekomstige zelf.', icon:'🎁'},
+  {text:'Sportkleding aantrekken is al de eerste overwinning.', icon:'👟'},
+  {text:'Dromen zijn doelen met een deadline. Wat is de jouwe?', icon:'📅'},
+  {text:'De weegschaal is slechts één van de vele maatstaven.', icon:'⚖️'},
+  {text:'Slaap goed, drink water, beweeg — simpel maar krachtig.', icon:'🌙'},
+];
+
+function getDailyQuote(){
+  const start=new Date('2024-01-01');
+  const now=new Date();
+  const day=Math.floor((now-start)/(1000*60*60*24));
+  return QUOTES[day % QUOTES.length];
+}
+
+function renderQuote(){
+  const q=getDailyQuote();
+  const textEl=document.getElementById('quote-text');
+  const iconEl=document.getElementById('quote-icon');
+  if(textEl) textEl.textContent=q.text;
+  if(iconEl) iconEl.textContent=q.icon;
+  const sidebarEl=document.getElementById('sidebar-quote');
+  if(sidebarEl) sidebarEl.textContent=q.icon+' '+q.text;
+}
+
+// ===== CONFETTI =====
+function launchConfetti(type='badge'){
+  if(typeof confetti==='undefined') return;
+  if(type==='badge'){
+    confetti({particleCount:120,spread:80,origin:{y:0.55},
+      colors:['#c8954a','#e8ba76','#c47a7a','#e8a4a4','#7a9e7e','#a8c5ab','#7a3030']});
+    setTimeout(()=>confetti({particleCount:60,spread:50,origin:{y:0.4},angle:60,
+      colors:['#c8954a','#f5e0bb','#faeaea']}),300);
+    setTimeout(()=>confetti({particleCount:60,spread:50,origin:{y:0.4},angle:120,
+      colors:['#7a9e7e','#e8f2e9','#c8954a']}),500);
+  } else if(type==='doel'){
+    // Extra groot voor doelgewicht behaald
+    const duration=3000,end=Date.now()+duration;
+    (function frame(){
+      confetti({particleCount:6,angle:60,spread:55,origin:{x:0},
+        colors:['#c8954a','#c47a7a','#7a9e7e']});
+      confetti({particleCount:6,angle:120,spread:55,origin:{x:1},
+        colors:['#c8954a','#c47a7a','#7a9e7e']});
+      if(Date.now()<end) requestAnimationFrame(frame);
+    })();
+  }
+}
+
+// Badge state tracking — check if new badges were earned after an action
+let _prevEarnedBadges=new Set();
+
+function initBadgeTracking(){
+  _prevEarnedBadges=new Set(BADGE_DEFS.filter(b=>b.check()).map(b=>b.id));
+}
+
+function checkNewBadges(){
+  const nowEarned=BADGE_DEFS.filter(b=>b.check());
+  const newBadges=nowEarned.filter(b=>!_prevEarnedBadges.has(b.id));
+  if(newBadges.length>0){
+    newBadges.forEach(b=>{
+      const isDoel=b.id==='doel_bereikt';
+      launchConfetti(isDoel?'doel':'badge');
+      showToast(`🏅 Nieuwe prestatie: ${b.name}!`);
+    });
+    _prevEarnedBadges=new Set(nowEarned.map(b=>b.id));
+  }
+}
+
+// ===== MOBIEL: FAB & SHEETS =====
+let fabSportType='Hardlopen';
+const SPORT_ICONS={Hardlopen:'🏃',Fietsen:'🚴',Zwemmen:'🏊',Krachttraining:'💪',Wandelen:'🚶',Schaatsen:'⛸️',Anders:'✨'};
+
+function openFabSheet(){
+  document.getElementById('mob-fab-sheet').classList.add('open');
+  document.getElementById('mob-overlay').classList.add('open');
+  renderFabMain();
+}
+function openMeerSheet(){
+  document.getElementById('mob-meer-sheet').classList.add('open');
+  document.getElementById('mob-overlay').classList.add('open');
+}
+function closeMobSheets(){
+  document.querySelectorAll('.mob-sheet').forEach(s=>s.classList.remove('open'));
+  document.getElementById('mob-overlay').classList.remove('open');
+}
+
+function renderFabMain(){
+  const el=document.getElementById('mob-fab-content');
+  if(!el) return;
+  el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <button class="fab-type-btn" onclick="renderFabForm('gewicht')">⚖️<br><span style="font-size:.8rem">Gewicht</span></button>
+    <button class="fab-type-btn" onclick="renderFabForm('sport')">🏃<br><span style="font-size:.8rem">Sport</span></button>
+    <button class="fab-type-btn" onclick="fabAddWater()">💧<br><span style="font-size:.8rem">Glas water</span></button>
+    <button class="fab-type-btn" onclick="renderFabForm('slaap')">😴<br><span style="font-size:.8rem">Slaap</span></button>
+  </div>`;
+}
+
+function renderFabForm(type){
+  const el=document.getElementById('mob-fab-content');
+  if(!el) return;
+  const today=todayStr();
+  const back=`<button onclick="renderFabMain()" style="background:none;border:none;color:var(--text-muted);font-size:.85rem;cursor:pointer;padding:0 0 10px;display:block">← Terug</button>`;
+  if(type==='gewicht'){
+    const gData=load(KEYS.gewicht);
+    const todayVal=gData.find(x=>x.datum===today);
+    el.innerHTML=back+`
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input type="number" id="fab-g-val" placeholder="Gewicht (kg)" step="0.1" min="30" max="300" value="${todayVal?todayVal.val:''}" style="padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);color:var(--text)">
+        <input type="date" id="fab-g-dat" value="${today}" style="padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);color:var(--text)">
+        <input type="text" id="fab-g-note" placeholder="Notitie (optioneel)" style="padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);color:var(--text)">
+        <button onclick="fabSaveGewicht()" style="background:#7a3030;color:#fff;border:none;border-radius:12px;padding:14px;font-size:1rem;cursor:pointer">⚖️ Opslaan</button>
+      </div>`;
+  } else if(type==='slaap'){
+    el.innerHTML=back+`
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input type="number" id="fab-sl-uren" placeholder="Uren geslapen (bijv. 7.5)" step="0.5" min="0" max="24" style="padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);color:var(--text)">
+        <input type="date" id="fab-sl-dat" value="${today}" style="padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);color:var(--text)">
+        <button onclick="fabSaveSlaap()" style="background:#6a9ec5;color:#fff;border:none;border-radius:12px;padding:14px;font-size:1rem;cursor:pointer">😴 Opslaan</button>
+      </div>`;
+  } else if(type==='sport'){
+    el.innerHTML=back+`
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="fab-sport-pills">
+          ${Object.entries(SPORT_ICONS).map(([s,ic])=>`<button class="fab-sport-pill-m${s===fabSportType?' sel':''}" onclick="setFabSport('${s}')">${ic}</button>`).join('')}
+        </div>
+        <input type="number" id="fab-sp-duur" placeholder="Duur (minuten)" min="1" max="600" style="padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);color:var(--text)">
+        <input type="date" id="fab-sp-dat" value="${today}" style="padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);color:var(--text)">
+        <button onclick="fabSaveSport()" style="background:#c8954a;color:#fff;border:none;border-radius:12px;padding:14px;font-size:1rem;cursor:pointer">🏃 Opslaan</button>
+      </div>`;
+  }
+}
+
+function setFabSport(sport){
+  fabSportType=sport;
+  document.querySelectorAll('.fab-sport-pill-m').forEach(p=>{
+    p.classList.toggle('sel',p.textContent===SPORT_ICONS[sport]);
+  });
+}
+
+function fabAddWater(){
+  quickAddWater();
+  closeMobSheets();
+}
+
+function fabSaveGewicht(){
+  const val=parseFloat(document.getElementById('fab-g-val').value);
+  const datum=document.getElementById('fab-g-dat').value||todayStr();
+  const note=(document.getElementById('fab-g-note').value||'').trim();
+  if(isNaN(val)||val<30||val>300){alert('Voer een geldig gewicht in');return;}
+  const data=load(KEYS.gewicht);
+  data.push({id:Date.now(),datum,val,note});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));
+  save(KEYS.gewicht,data);
+  closeMobSheets();renderDashboard();
+  showToast('⚖️ '+val+' kg opgeslagen!');checkNewBadges();triggerAutoSync();
+}
+
+function fabSaveSlaap(){
+  const uren=parseFloat(document.getElementById('fab-sl-uren').value);
+  const datum=document.getElementById('fab-sl-dat').value||todayStr();
+  if(isNaN(uren)||uren<0||uren>24){alert('Voer geldige slaapuren in');return;}
+  const data=load(KEYS.slaap);
+  data.push({id:Date.now(),datum,uren,kwaliteit:3,note:''});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));
+  save(KEYS.slaap,data);
+  closeMobSheets();renderDashboard();
+  showToast('😴 '+uren+' uur slaap opgeslagen!');triggerAutoSync();
+}
+
+function fabSaveSport(){
+  const duur=parseInt(document.getElementById('fab-sp-duur').value);
+  const datum=document.getElementById('fab-sp-dat').value||todayStr();
+  if(isNaN(duur)||duur<1){alert('Voer een geldige duur in');return;}
+  const data=load(KEYS.sport);
+  data.push({id:Date.now(),datum,sport:fabSportType,duur,note:''});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));
+  save(KEYS.sport,data);
+  closeMobSheets();renderDashboard();
+  showToast('🏃 '+fabSportType+' '+duur+' min opgeslagen!');checkNewBadges();triggerAutoSync();
+}
+
+// ===== DARK MODE =====
+function toggleDarkMode(){
+  const isDark=document.documentElement.classList.toggle('dark');
+  const s=loadSettings();s.darkMode=isDark;saveSettingsData(s);
+  document.getElementById('dark-icon').textContent=isDark?'☀️':'🌙';
+  document.getElementById('dark-label').textContent=isDark?'Licht thema':'Donker thema';
+  // Re-render charts so they pick up new colors
+  Object.keys(charts).forEach(id=>destroyChart(id));
+  renderDashboard();
+}
+function applyDarkMode(){
+  const s=loadSettings();
+  if(s.darkMode){
+    document.documentElement.classList.add('dark');
+    const ic=document.getElementById('dark-icon');
+    const lb=document.getElementById('dark-label');
+    if(ic) ic.textContent='☀️';
+    if(lb) lb.textContent='Licht thema';
+  }
+}
+
+// ===== MOBIELE NAVIGATIE =====
+let fabSheetOpen=false;
+let fabCurrentTab='gewicht';
+let fabSportSelected='Hardlopen';
+
+function mobNav(tab){
+  // "meer" opent een menu met slaap/prestaties/instellingen
+  if(tab==='meer'){
+    const tabs=['slaap','prestaties','instellingen'];
+    const labels=['😴 Slaap','🏅 Prestaties','⚙️ Instellingen'];
+    const current=document.querySelector('.mob-nav-btn.active');
+    // simple cycle through meer items
+    const cur=tabs.indexOf(document.querySelector('.view.active')?.id.replace('view-',''));
+    const next=tabs[(cur+1)%tabs.length];
+    switchTab(next);
+    updateMobNavActive('meer');
+    return;
+  }
+  switchTab(tab);
+  updateMobNavActive(tab);
+  closeFabSheet();
+}
+
+function updateMobNavActive(tab){
+  document.querySelectorAll('.mob-nav-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('mobnav-'+tab);
+  if(btn) btn.classList.add('active');
+  else document.getElementById('mobnav-meer').classList.add('active');
+}
+
+function toggleFabSheet(){
+  fabSheetOpen?closeFabSheet():openFabSheet();
+}
+function openFabSheet(){
+  fabSheetOpen=true;
+  document.getElementById('mob-sheet').classList.add('open');
+  document.getElementById('mob-overlay').classList.add('visible');
+  document.getElementById('fab-btn').classList.add('open');
+  document.getElementById('fab-slaap-datum').value=todayStr();
+  document.getElementById('fab-gew-datum').value=todayStr();
+  // Prefill gewicht
+  const gData=load(KEYS.gewicht);
+  if(gData.length) document.getElementById('fab-gew-val').value=gData[gData.length-1].val;
+}
+function closeFabSheet(){
+  fabSheetOpen=false;
+  document.getElementById('mob-sheet').classList.remove('open');
+  document.getElementById('mob-overlay').classList.remove('visible');
+  document.getElementById('fab-btn').classList.remove('open');
+}
+
+function switchFabTab(tab){
+  fabCurrentTab=tab;
+  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('fabtab-'+tab).classList.add('active');
+  document.querySelectorAll('.fab-panel').forEach(p=>p.style.display='none');
+  document.getElementById('fab-content-'+tab).style.display='flex';
+}
+
+function fabSaveGewicht(){
+  const val=parseFloat(document.getElementById('fab-gew-val').value);
+  const datum=document.getElementById('fab-gew-datum').value||todayStr();
+  const note=document.getElementById('fab-gew-note').value.trim();
+  if(isNaN(val)||val<30||val>300){alert('Voer een geldig gewicht in');return;}
+  const data=load(KEYS.gewicht);
+  data.push({id:Date.now(),datum,val,note});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));
+  save(KEYS.gewicht,data);
+  document.getElementById('fab-gew-val').value='';
+  document.getElementById('fab-gew-note').value='';
+  closeFabSheet();flashStat('stat-gewicht');renderDashboard();
+  showToast('⚖️ '+val+' kg opgeslagen');checkNewBadges();triggerAutoSync();
+}
+
+function fabSaveSport(){
+  const duur=parseInt(document.getElementById('fab-sport-duur').value);
+  if(!duur||duur<1){alert('Voer een geldige duur in');return;}
+  const data=load(KEYS.sport);
+  data.push({id:Date.now(),datum:todayStr(),sport:fabSportSelected,duur,note:''});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));
+  save(KEYS.sport,data);
+  document.getElementById('fab-sport-duur').value='';
+  closeFabSheet();flashStat('stat-sport');renderDashboard();
+  showToast('🏃 '+fabSportSelected+' '+duur+' min opgeslagen');checkNewBadges();triggerAutoSync();
+}
+
+function fabSaveWater(){
+  const goal=parseInt(loadSettings().waterdoel)||8;
+  const cur=getWaterToday();
+  if(cur<goal) setWaterToday(cur+1);
+  closeFabSheet();renderDashboard();
+  showToast('💧 Glas water toegevoegd!');triggerAutoSync();
+}
+
+function fabSaveSlaap(){
+  const uren=parseFloat(document.getElementById('fab-slaap-uren').value);
+  const datum=document.getElementById('fab-slaap-datum').value||todayStr();
+  if(isNaN(uren)||uren<0||uren>24){alert('Voer geldige slaapuren in');return;}
+  const data=load(KEYS.slaap);
+  data.push({id:Date.now(),datum,uren,kwaliteit:3,note:''});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));
+  save(KEYS.slaap,data);
+  document.getElementById('fab-slaap-uren').value='';
+  closeFabSheet();flashStat('stat-slaap');renderDashboard();
+  showToast('😴 '+uren+'u slaap opgeslagen');triggerAutoSync();
+}
+
+function initFabSportPills(){
+  document.querySelectorAll('#fab-sport-pills .mob-sport-pill').forEach(p=>{
+    p.addEventListener('click',()=>{
+      document.querySelectorAll('#fab-sport-pills .mob-sport-pill').forEach(x=>x.classList.remove('selected'));
+      p.classList.add('selected');
+      fabSportSelected=p.dataset.sport;
+    });
+  });
+}
+
+// ===== AUTO-SYNC (#17) =====
+let autoSyncTimer=null;
+function triggerAutoSync(){
+  clearTimeout(autoSyncTimer);
+  autoSyncTimer=setTimeout(doAutoSync,2500);
+}
+async function doAutoSync(){
+  const{url,user}=getFirebaseConfig();
+  if(!url||!user) return;
+  const ind=document.getElementById('autosync-indicator');
+  if(ind) ind.textContent='☁ Synchroniseren...';
+  try{
+    const res=await fetch(`${url}/welzijn/${user}.json`,{method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({gewicht:load(KEYS.gewicht),sport:load(KEYS.sport),
+        water:load(KEYS.water),slaap:load(KEYS.slaap),meetmomenten:loadMM(),settings:loadSettings()})});
+    if(res.ok){
+      if(ind){ind.textContent='☁ Gesynchroniseerd ✓';setTimeout(()=>{if(ind)ind.textContent='';},3000);}
+    }
+  }catch(e){if(ind){ind.textContent='☁ Sync mislukt';setTimeout(()=>{if(ind)ind.textContent='';},4000);}}
+}
+async function autoInitSync(){
+  const{url,user}=getFirebaseConfig();
+  if(!url||!user) return;
+  const ind=document.getElementById('autosync-indicator');
+  if(ind) ind.textContent='☁ Data ophalen...';
+  try{
+    const res=await fetch(`${url}/welzijn/${user}.json`);
+    if(!res.ok) return;
+    const data=await res.json();
+    if(!data) return;
+    if(data.gewicht&&Array.isArray(data.gewicht)) save(KEYS.gewicht,data.gewicht);
+    if(data.sport&&Array.isArray(data.sport))   save(KEYS.sport,data.sport);
+    if(data.water&&Array.isArray(data.water))   save(KEYS.water,data.water);
+    if(data.slaap&&Array.isArray(data.slaap))   save(KEYS.slaap,data.slaap);
+    if(data.meetmomenten&&Array.isArray(data.meetmomenten)) saveMM(data.meetmomenten);
+    if(data.settings){
+      const local=loadSettings(),remote=data.settings,merged={...remote};
+      ['startgewicht','doelgewicht','lengte','naam','motivatie'].forEach(k=>{if(local[k]) merged[k]=local[k];});
+      if(local.firebaseUrl) merged.firebaseUrl=local.firebaseUrl;
+      if(local.firebaseUser) merged.firebaseUser=local.firebaseUser;
+      saveSettingsData(merged);
+    }
+    if(ind){ind.textContent='☁ Data geladen ✓';setTimeout(()=>{if(ind)ind.textContent='';},3000);}
+    renderDashboard();
+  }catch(e){if(ind){ind.textContent='';}}
+}
+
+// ===== MOTIVATIE (#7) =====
+function renderMotivatie(){
+  const s=loadSettings();
+  const el=document.getElementById('dash-motivatie');
+  if(!el) return;
+  if(s.motivatie&&s.motivatie.trim()){
+    el.textContent='💛 Ik doe dit voor: '+s.motivatie;
+    el.style.display='block';
+  } else {
+    el.style.display='none';
+  }
+}
+
+// ===== TERUGKERENDE SPORT (#14) =====
+const DAGNAMEN=['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag'];
+function loadHerhaling(){const s=loadSettings();return Array.isArray(s.herhaling)?s.herhaling:[];}
+function saveHerhaling(h){const s=loadSettings();s.herhaling=h;saveSettingsData(s);}
+function addHerhaling(){
+  const dag=parseInt(document.getElementById('h-dag').value);
+  const sport=document.getElementById('h-sport').value;
+  const duur=parseInt(document.getElementById('h-duur').value)||45;
+  const h=loadHerhaling();
+  h.push({dag,sport,duur});
+  saveHerhaling(h);
+  renderHerhalingList();
+  showToast('🔄 Terugkerende training toegevoegd!');
+  triggerAutoSync();
+}
+function deleteHerhaling(i){
+  const h=loadHerhaling();h.splice(i,1);saveHerhaling(h);renderHerhalingList();triggerAutoSync();
+}
+function renderHerhalingList(){
+  const list=document.getElementById('herhaling-list');
+  if(!list) return;
+  const h=loadHerhaling();
+  if(!h.length){list.innerHTML='<div style="font-size:.78rem;color:var(--text-muted);font-style:italic">Nog geen terugkerende trainingen.</div>';return;}
+  list.innerHTML=h.map((x,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--cream2);border-radius:10px;margin-bottom:6px;font-size:.82rem">
+      <span><strong>${DAGNAMEN[x.dag]}</strong> — ${x.sport} · ${x.duur} min</span>
+      <button onclick="deleteHerhaling(${i})" style="background:none;border:none;cursor:pointer;color:var(--rose);font-size:.9rem;padding:2px 6px">✕</button>
+    </div>`).join('');
+}
+function checkHerhaling(){
+  const vandaag=new Date().getDay();
+  const h=loadHerhaling().filter(x=>x.dag===vandaag);
+  if(!h.length) return;
+  const sData=load(KEYS.sport);
+  const todayLogged=sData.some(x=>x.datum===todayStr());
+  if(todayLogged) return;
+  // Pre-fill quick-add with first match
+  const match=h[0];
+  setTimeout(()=>{
+    const duurEl=document.getElementById('q-sport-duur');
+    if(duurEl&&!duurEl.value) duurEl.value=match.duur;
+    // Select the right sport pill
+    document.querySelectorAll('#q-sport-pills .q-sport-pill').forEach(p=>{
+      p.classList.toggle('selected',p.dataset.sport===match.sport);
+    });
+    qSelectedSport=match.sport;
+    showToast(`🔄 Terugkerende training: ${match.sport} ${match.duur} min — alvast ingevuld!`);
+  },1200);
+}
+
+// ===== SAVE POP =====
+function savePop(cardId){
+  const el=document.getElementById(cardId);
+  if(!el) return;
+  el.classList.remove('save-pop');
+  void el.offsetWidth; // reflow
+  el.classList.add('save-pop');
+  setTimeout(()=>el.classList.remove('save-pop'),500);
+}
+function flashStat(statId){
+  const el=document.getElementById(statId);
+  if(!el) return;
+  el.classList.remove('stat-flash');
+  void el.offsetWidth;
+  el.classList.add('stat-flash');
+  setTimeout(()=>el.classList.remove('stat-flash'),800);
+}
+
+// ===== NAAM =====
+function getNaam(){ return loadSettings().naam||''; }
+
+// ===== TRENDLIJN (lineaire regressie) =====
+function calcTrendline(data){
+  if(data.length<2) return null;
+  const n=data.length;
+  const xs=data.map((_,i)=>i);
+  const ys=data.map(d=>d.val);
+  const xMean=xs.reduce((a,b)=>a+b,0)/n;
+  const yMean=ys.reduce((a,b)=>a+b,0)/n;
+  const num=xs.reduce((s,x,i)=>s+(x-xMean)*(ys[i]-yMean),0);
+  const den=xs.reduce((s,x)=>s+(x-xMean)**2,0);
+  if(den===0) return null;
+  const slope=num/den, intercept=yMean-slope*xMean;
+  return [intercept, intercept+slope*(n-1)];
+}
+
+// ===== SLAAP =====
+const KWALITEIT_LABELS={1:'Slecht',2:'Matig',3:'Oké',4:'Goed',5:'Uitstekend'};
+function addSlaap(){
+  const uren=parseFloat(document.getElementById('input-slaap-uren').value);
+  const datum=document.getElementById('input-slaap-datum').value||todayStr();
+  const note=document.getElementById('input-slaap-note').value.trim();
+  if(isNaN(uren)||uren<0||uren>24){alert('Voer geldige slaapuren in');return;}
+  const data=load(KEYS.slaap);
+  data.push({id:Date.now(),datum,uren,kwaliteit:3,note});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));
+  save(KEYS.slaap,data);
+  document.getElementById('input-slaap-uren').value='';
+  document.getElementById('input-slaap-note').value='';
+  renderSlaap();renderDashboard();
+}
+
+function slaapColor(uren,alpha){
+  if(uren<6)  return alpha?`rgba(196,122,122,${alpha})`:'#c47a7a';
+  if(uren<=8) return alpha?`rgba(200,149,74,${alpha})`:'#c8954a';
+  return alpha?`rgba(122,158,126,${alpha})`:'#7a9e7e';
+}
+
+function renderSlaap(){
+  const data=load(KEYS.slaap);
+  const log=document.getElementById('slaap-log');
+  if(!data.length){if(log) log.innerHTML='<div class="empty-state"><span>😴</span>Nog geen slaap gelogd</div>';}
+  else if(log){
+    log.innerHTML=[...data].reverse().slice(0,30).map(x=>`
+      <div class="log-item">
+        <div class="log-icon" style="background:${slaapColor(x.uren,'0.15')};border-color:${slaapColor(x.uren,'0.4')}">
+          <span style="font-size:.95rem;font-weight:700;color:${slaapColor(x.uren)}">${x.uren}u</span>
+        </div>
+        <div class="log-item-left">
+          <div class="log-date">${fmtDate(x.datum)}</div>
+          <div class="log-val">${x.uren} uur</div>
+          ${x.note?`<div class="log-note">${x.note}</div>`:''}
+        </div>
+        <button class="delete-btn" onclick="deleteSlaap(${x.id})">✕</button>
+      </div>`).join('');
+  }
+
+  destroyChart('slaapChart');
+  const chartEl=document.getElementById('slaapChart');
+  if(chartEl&&data.length>0){
+    try{
+      const recent=data.slice(-14);
+      const vals=recent.map(x=>x.uren);
+      const minV=Math.max(0,Math.min(...vals)-1);
+      const maxV=Math.max(...vals)+0.8;
+      const ctx=chartEl.getContext('2d');
+      const grad=ctx.createLinearGradient(0,0,0,260);
+      grad.addColorStop(0,'rgba(106,158,197,0.18)');
+      grad.addColorStop(1,'rgba(106,158,197,0)');
+      const cfg=chartDefaults();
+      charts['slaapChart']=new Chart(ctx,{type:'line',
+        data:{labels:recent.map(x=>fmtDate(x.datum)),
+          datasets:[{
+            data:vals,
+            borderColor:'#6a9ec5',
+            backgroundColor:grad,
+            borderWidth:2.5,
+            pointBackgroundColor:vals.map(v=>slaapColor(v)),
+            pointBorderColor:'#fff',
+            pointBorderWidth:2,
+            pointRadius:7,
+            tension:0.4,
+            fill:true
+          }]},
+        options:{...cfg,
+          scales:{...cfg.scales,
+            y:{...cfg.scales.y,beginAtZero:false,
+              suggestedMin:minV,suggestedMax:maxV,
+              ticks:{...cfg.scales.y.ticks,callback:v=>v+'u'}}}}});
+      charts['slaapChart'].options.animation={onComplete:()=>drawSlaapLabels('slaapChart',recent.map(x=>({uren:x.uren})))};
+      charts['slaapChart'].update();
+    }catch(e){console.warn('Slaap chart error:',e);}
+  }
+
+  // Stats
+  const statsEl=document.getElementById('slaap-stats');
+  if(statsEl&&data.length>0){
+    const avg7=data.slice(-7).reduce((s,x)=>s+x.uren,0)/Math.min(7,data.length);
+    const avg30=data.slice(-30).reduce((s,x)=>s+x.uren,0)/Math.min(30,data.length);
+    const best=data.reduce((a,b)=>b.uren>a.uren?b:a);
+    const worst=data.reduce((a,b)=>b.uren<a.uren?b:a);
+    const stats=[
+      {label:'Gemiddeld laatste 7 nachten',val:avg7.toFixed(1)+' uur',icon:'📊'},
+      {label:'Gemiddeld laatste 30 nachten',val:avg30.toFixed(1)+' uur',icon:'📅'},
+      {label:'Beste nacht',val:best.uren+' uur  ('+fmtDate(best.datum)+')',icon:'⭐'},
+      {label:'Kortste nacht',val:worst.uren+' uur  ('+fmtDate(worst.datum)+')',icon:'⚠️'},
+    ];
+    statsEl.innerHTML=stats.map(s=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-light)">
+        <div style="font-size:1.2rem;width:28px;text-align:center">${s.icon}</div>
+        <div style="flex:1;font-size:.85rem;color:var(--text-soft)">${s.label}</div>
+        <div style="font-family:var(--font-head);font-size:1rem;color:var(--burgundy)">${s.val}</div>
+      </div>`).join('');
+  }
+}
+
+function deleteSlaap(id){
+  save(KEYS.slaap,load(KEYS.slaap).filter(x=>x.id!==id));
+  renderSlaap();renderDashboard();
+}
+
+// Custom uur-labels op punten tekenen
+function drawSlaapLabels(chartId, dataPoints){
+  const chart=charts[chartId];
+  if(!chart) return;
+  const ctx=chart.ctx;
+  const meta=chart.getDatasetMeta(0);
+  ctx.save();
+  meta.data.forEach((point,i)=>{
+    const v=dataPoints[i]?.uren||dataPoints[i];
+    if(!v) return;
+    const x=point.x, y=point.y;
+    const label=v+'u';
+    const pad={x:7,y:4};
+    ctx.font='600 11px Nunito, sans-serif';
+    const tw=ctx.measureText(label).width;
+    const bw=tw+pad.x*2, bh=18+pad.y;
+    const bx=x-bw/2, by=y-bh-10;
+    // box
+    const col=slaapColor(v);
+    ctx.fillStyle=col+'22';
+    ctx.strokeStyle=col+'88';
+    ctx.lineWidth=1;
+    const r=6;
+    ctx.beginPath();
+    ctx.moveTo(bx+r,by);ctx.lineTo(bx+bw-r,by);ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+r);
+    ctx.lineTo(bx+bw,by+bh-r);ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh);
+    ctx.lineTo(bx+r,by+bh);ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-r);
+    ctx.lineTo(bx,by+r);ctx.quadraticCurveTo(bx,by,bx+r,by);
+    ctx.closePath();
+    ctx.fill();ctx.stroke();
+    // text
+    ctx.fillStyle=col;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(label,x,by+bh/2);
+  });
+  ctx.restore();
+}
+
+// ===== QUICK ADD SLAAP (dashboard) =====
+let qSlaapKwaliteit=3;
+function initQuickSlaapPills(){
+  document.querySelectorAll('#q-slaap-kw .q-slaap-pill').forEach(p=>{
+    p.addEventListener('click',()=>{
+      document.querySelectorAll('#q-slaap-kw .q-slaap-pill').forEach(x=>x.classList.remove('selected'));
+      p.classList.add('selected');
+      qSlaapKwaliteit=parseInt(p.dataset.q);
+    });
+  });
+}
+function quickAddSlaap(){
+  const uren=parseFloat(document.getElementById('q-slaap-uren').value);
+  const datum=document.getElementById('q-slaap-datum').value||todayStr();
+  if(isNaN(uren)||uren<0||uren>24){alert('Voer geldige slaapuren in');return;}
+  const data=load(KEYS.slaap);
+  data.push({id:Date.now(),datum,uren,kwaliteit:3,note:''});
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));
+  save(KEYS.slaap,data);
+  document.getElementById('q-slaap-uren').value='';
+  savePop('dash-slaap-chart-card');flashStat('stat-slaap');
+  renderDashboard();showToast('😴 '+uren+' uur slaap opgeslagen ('+fmtDate(datum)+')');triggerAutoSync();
+}
+
+function renderDashSlaapChart(){
+  const data=load(KEYS.slaap);
+  const days=last7Days();
+  const counts=days.map(d=>{const e=data.find(x=>x.datum===d);return e?{uren:e.uren,kw:e.kwaliteit}:null;});
+  const uren=counts.map(x=>x?x.uren:0);
+  const filled=counts.filter(x=>x!==null);
+
+  // Gemiddelde badge
+  const avgEl=document.getElementById('dash-slaap-avg');
+  if(avgEl){
+    if(filled.length>0){
+      const avg=filled.reduce((s,x)=>s+x.uren,0)/filled.length;
+      avgEl.textContent='Ø '+avg.toFixed(1)+' uur';
+      avgEl.className='badge '+(avg>=7?'badge-good':avg>=6?'badge-gold':'badge-bad');
+    } else {avgEl.textContent='—';avgEl.className='badge badge-neutral';}
+  }
+
+  destroyChart('dashSlaapChart');
+  const el=document.getElementById('dashSlaapChart');
+  if(!el) return;
+
+  // No data — show empty state
+  if(filled.length===0){
+    const ctx=el.getContext('2d');
+    ctx.clearRect(0,0,el.width,el.height);
+    ctx.fillStyle='#b89880';ctx.font='13px Nunito';ctx.textAlign='center';
+    ctx.fillText('Nog geen slaap gelogd 😴',el.width/2,70);
+    return;
+  }
+
+  const filledUrens=filled.map(x=>x.uren);
+  const minU=Math.max(0,Math.min(...filledUrens)-1);
+  const maxU=Math.max(...filledUrens)+1.5;
+
+  const ctx=el.getContext('2d'),cfg=chartDefaults();
+  const grad=ctx.createLinearGradient(0,0,0,130);
+  grad.addColorStop(0,'rgba(106,158,197,0.15)');
+  grad.addColorStop(1,'rgba(106,158,197,0)');
+  charts['dashSlaapChart']=new Chart(ctx,{type:'line',
+    data:{labels:days.map(d=>{const p=d.split('-');return `${p[2]}/${p[1]}`;}),
+      datasets:[{
+        data:uren.map(u=>u===0?null:u),
+        borderColor:'#6a9ec5',
+        backgroundColor:grad,
+        borderWidth:2.5,
+        pointBackgroundColor:uren.map(u=>u>0?slaapColor(u):'transparent'),
+        pointBorderColor:'#fff',
+        pointBorderWidth:2,
+        pointRadius:uren.map(u=>u>0?6:0),
+        tension:0.4,
+        fill:true,
+        spanGaps:false
+      }]},
+    options:{...cfg,scales:{...cfg.scales,
+      y:{...cfg.scales.y,beginAtZero:false,
+        suggestedMin:minU,
+        suggestedMax:maxU,
+        ticks:{...cfg.scales.y.ticks,callback:v=>v+'u'}
+      }
+    }}
+  });
+  const filledPoints=days.map((d,i)=>counts[i]?{uren:uren[i]}:null);
+  charts['dashSlaapChart'].options.animation={onComplete:()=>drawSlaapLabels('dashSlaapChart',filledPoints)};
+  charts['dashSlaapChart'].update();
+}
+
+// ===== VOORTGANG TIJDLIJN (#11) =====
+const KEYS_MM='tracker_meetmomenten';
+function loadMM(){try{return JSON.parse(localStorage.getItem(KEYS_MM))||{};}catch{return{};}}
+function saveMM(d){localStorage.setItem(KEYS_MM,JSON.stringify(d));}
+let mmSelected=null;
+
+function toggleMmForm(){
+  const f=document.getElementById('mm-add-form');
+  if(!f) return;
+  const open=f.style.display==='block';
+  f.style.display=open?'none':'block';
+  if(!open){
+    document.getElementById('mm-datum').value=todayStr();
+    const gData=load(KEYS.gewicht);
+    const today=gData.find(x=>x.datum===todayStr());
+    if(today) document.getElementById('mm-gewicht').value=today.val;
+  }
+}
+
+function addMeetmoment(){
+  const datum=document.getElementById('mm-datum').value||todayStr();
+  const gewicht=parseFloat(document.getElementById('mm-gewicht').value);
+  const notitie=document.getElementById('mm-notitie').value.trim();
+  if(isNaN(gewicht)||gewicht<30||gewicht>300){alert('Voer een geldig gewicht in');return;}
+  // Sla op als gewichtsmeting + notitie
+  const gData=load(KEYS.gewicht);
+  const existing=gData.find(x=>x.datum===datum);
+  if(!existing){
+    gData.push({id:Date.now(),datum,val:gewicht,note:notitie});
+    gData.sort((a,b)=>a.datum.localeCompare(b.datum));
+    save(KEYS.gewicht,gData);
+  }
+  // Sla notitie op apart als die er is
+  if(notitie){
+    const notes=loadMM();
+    notes[datum]=notitie;
+    saveMM(notes);
+  }
+  document.getElementById('mm-gewicht').value='';
+  document.getElementById('mm-notitie').value='';
+  document.getElementById('mm-add-form').style.display='none';
+  mmSelected=datum;
+  renderGewicht();
+  showToast('📍 Meetmoment opgeslagen!');
+  triggerAutoSync();
+}
+
+function deleteMeetmoment(datum){
+  if(!confirm('Notitie verwijderen van dit meetmoment?')) return;
+  const notes=loadMM();
+  delete notes[datum];
+  saveMM(notes);
+  mmSelected=null;
+  renderMeetmomentTijdlijn();
+}
+
+function selectMM(datum){
+  mmSelected=mmSelected===datum?null:datum;
+  renderMeetmomentTijdlijn();
+}
+
+function renderMeetmomentTijdlijn(){
+  const tl=document.getElementById('mm-timeline');
+  const det=document.getElementById('mm-detail');
+  if(!tl) return;
+
+  // Gebruik gewichtsdata direct als basis
+  const gData=load(KEYS.gewicht);
+  const notes=loadMM();
+  const settings=loadSettings();
+  const startGew=settings.startgewicht||(gData.length>0?Math.max(...gData.map(x=>x.val)):null);
+  const doelGew=settings.doelgewicht;
+
+  if(!gData.length){
+    tl.innerHTML=`<div style="font-size:.82rem;color:var(--text-muted);font-style:italic;padding:8px 4px">Nog geen gewichtsmetingen. Voeg een meting toe in het formulier hierboven.</div>`;
+    if(det) det.style.display='none';
+    return;
+  }
+
+  // Bereken trackbreedte op basis van aantal entries
+  const trackW=gData.length>1?(gData.length-1)*140+'px':'0px';
+  tl.innerHTML=`<div class="mm-track" style="width:${trackW}"></div>`+gData.map((e,i)=>{
+    const prev=i>0?gData[i-1]:null;
+    const delta=prev?Math.round((e.val-prev.val)*10)/10:null;
+    const isActive=mmSelected===e.datum;
+    const isLatest=i===gData.length-1;
+    const dotClass=isLatest?'active':'done';
+    const photoClass=isLatest?'active':'done';
+    const [y,m,d]=e.datum.split('-');
+    const mn=['','jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+    const dateStr=`${parseInt(d)} ${mn[parseInt(m)]} '${y.slice(2)}`;
+    const notitie=notes[e.datum]||e.note||'';
+    return `<div class="mm-entry" onclick="selectMM('${e.datum}')">
+      <div class="mm-dot-wrap"><div class="mm-dot ${dotClass}"></div></div>
+      <div class="mm-card${isActive?' active':''}">
+        <div class="mm-photo ${photoClass}">
+          <div style="font-size:1.4rem;line-height:1">${isLatest?'●':'✓'}</div>
+          <div>${e.val} kg</div>
+        </div>
+        <div class="mm-date">${dateStr}</div>
+        <div><span class="mm-weight">${e.val}</span><span class="mm-unit"> kg</span></div>
+        ${delta!==null?`<span class="mm-delta ${delta<=0?'good':'bad'}">${delta>0?'+':''}${delta} kg</span>`:'<span class="mm-delta" style="background:var(--parchment);color:var(--text-muted)">start</span>'}
+        ${notitie?`<div class="mm-note">${notitie}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Detail panel
+  if(mmSelected){
+    const e=gData.find(x=>x.datum===mmSelected);
+    if(e&&det){
+      det.style.display='block';
+      const totalLost=startGew?Math.round((startGew-e.val)*10)/10:null;
+      const pct=startGew&&doelGew?Math.max(0,Math.min(100,Math.round((startGew-e.val)/(startGew-doelGew)*100))):null;
+      const [y,m,d]=e.datum.split('-');
+      const maanden=['','januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+      const notitie=notes[e.datum]||e.note||'';
+      det.innerHTML=`
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:.85rem;font-weight:700;color:var(--text)">${parseInt(d)} ${maanden[parseInt(m)]} 20${y.slice(2)}</div>
+          ${notitie?`<button onclick="deleteMeetmoment('${e.datum}')" style="background:none;border:none;cursor:pointer;color:var(--rose);font-size:.78rem;padding:2px 8px">✕ Notitie wissen</button>`:''}
+        </div>
+        <div class="mm-detail-stats">
+          <div class="mm-stat"><div class="mm-stat-val">${e.val} kg</div><div class="mm-stat-label">Gewicht</div></div>
+          ${totalLost!==null?`<div class="mm-stat"><div class="mm-stat-val">${totalLost} kg</div><div class="mm-stat-label">Totaal afgevallen</div></div>`:''}
+          ${pct!==null?`<div class="mm-stat"><div class="mm-stat-val">${pct}%</div><div class="mm-stat-label">Naar doel</div></div>`:''}
+        </div>
+        ${notitie?`<div style="font-size:.82rem;color:var(--text-soft);font-style:italic;padding:8px 12px;background:#fff;border-radius:10px;border:1px solid var(--border-light);margin-top:8px">"${notitie}"</div>`:'<div style="font-size:.78rem;color:var(--text-muted);margin-top:8px">Geen notitie — voeg er een toe via + Meetmoment.</div>'}`;
+    }
+  } else if(det){
+    det.style.display='none';
+  }
+}
+
+// ===== MAANDOVERZICHT =====
+function renderMaandChart(){
+  destroyChart('maandChart');
+  const el=document.getElementById('maandChart');
+  if(!el) return;
+  const data=load(KEYS.gewicht);
+  if(!data.length) return;
+  // Groepeer per maand
+  const maanden={};
+  data.forEach(x=>{
+    const m=x.datum.slice(0,7);
+    if(!maanden[m]) maanden[m]=[];
+    maanden[m].push(x.val);
+  });
+  const keys=Object.keys(maanden).sort();
+  const labels=keys.map(k=>{const [y,m]=k.split('-');const mn=['','jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];return mn[parseInt(m)]+" '"+y.slice(2);});
+  const avgs=keys.map(k=>{const v=maanden[k];return Math.round(v.reduce((a,b)=>a+b,0)/v.length*10)/10;});
+  const cfg=chartDefaults();
+  const ctx=el.getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,0,180);
+  grad.addColorStop(0,'rgba(200,149,74,0.55)');
+  grad.addColorStop(1,'rgba(200,149,74,0.15)');
+  charts['maandChart']=new Chart(ctx,{type:'bar',
+    data:{labels,datasets:[{
+      data:avgs,
+      backgroundColor:grad,
+      borderColor:'#c8954a',
+      borderWidth:1.5,
+      borderRadius:6
+    }]},
+    options:{...cfg,
+      scales:{...cfg.scales,
+        y:{...cfg.scales.y,
+          suggestedMin:Math.min(...avgs)-3,
+          suggestedMax:Math.max(...avgs)+2,
+          ticks:{...cfg.scales.y.ticks,callback:v=>v+'kg'}
+        }
+      },
+      plugins:{...cfg.plugins,
+        tooltip:{...cfg.plugins.tooltip,
+          callbacks:{label:ctx=>'Gem. '+ctx.raw+' kg ('+maanden[keys[ctx.dataIndex]].length+' meting'+( maanden[keys[ctx.dataIndex]].length!==1?'en':'')+')'}}
+      }
+    }
+  });
+}
+
+// ===== HEATMAP =====
+let hmType='sport';
+function initHeatmap(){
+  document.querySelectorAll('#hm-tabs .hm-tab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      document.querySelectorAll('#hm-tabs .hm-tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      hmType=t.dataset.type;
+      renderHeatmap();
+    });
+  });
+  // day labels
+  const dl=document.getElementById('hm-day-labels');
+  if(dl) dl.innerHTML=['','Ma','','Wo','','Vr',''].map(l=>`<div class="hm-day-label">${l}</div>`).join('');
+  // legend
+  const lc=document.getElementById('hm-legend-cells');
+  if(lc) lc.innerHTML=[0,1,2,3,4].map(i=>`<div class="hm-cell" style="background:${hmColor(i,4)};flex-shrink:0"></div>`).join('');
+}
+function hmColor(v,max,type){
+  if(v===0) return 'var(--parchment)';
+  const pct=Math.min(1,v/max);
+  if(type==='slaap'){
+    // slaap: rood-goud-groen
+    if(v<6) return `rgba(196,122,122,${0.3+pct*0.5})`;
+    if(v<=8) return `rgba(200,149,74,${0.3+pct*0.5})`;
+    return `rgba(122,158,126,${0.4+pct*0.4})`;
+  }
+  // sport/gewicht: salie groen
+  const opacity=0.25+pct*0.65;
+  return `rgba(122,158,126,${opacity.toFixed(2)})`;
+}
+function renderHeatmap(){
+  const grid=document.getElementById('hm-grid');
+  const monthRow=document.getElementById('hm-month-row');
+  if(!grid||!monthRow) return;
+
+  const sData=load(KEYS.sport);
+  const gData=load(KEYS.gewicht);
+  const slData=load(KEYS.slaap);
+  const mn=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+
+  // build lookup
+  const lookup={};
+  if(hmType==='sport'){
+    sData.forEach(x=>{lookup[x.datum]=(lookup[x.datum]||0)+1;});
+  } else if(hmType==='gewicht'){
+    gData.forEach(x=>{lookup[x.datum]=(lookup[x.datum]||0)+1;});
+  } else {
+    slData.forEach(x=>{lookup[x.datum]=x.uren;});
+  }
+
+  // Start: 52 weken terug, begin maandag
+  const today=new Date();
+  const start=new Date(today);
+  start.setDate(today.getDate()-363);
+  const dow=start.getDay();
+  start.setDate(start.getDate()-(dow===0?6:dow-1));
+
+  // Build weeks
+  const weeks=[];
+  let week=[];
+  for(let i=0;i<53*7;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    week.push(d);
+    if(week.length===7){weeks.push([...week]);week=[];}
+  }
+  if(week.length) weeks.push([...week]);
+
+  const maxVal=hmType==='slaap'?10:Math.max(1,...Object.values(lookup));
+
+  // Month labels
+  const monthPositions={};
+  weeks.forEach((wk,wi)=>wk.forEach(d=>{const m=d.getMonth();if(!(m in monthPositions))monthPositions[m]=wi;}));
+  monthRow.style.cssText='position:relative;height:16px;padding-left:0';
+  monthRow.innerHTML='';
+  Object.entries(monthPositions).forEach(([m,wi])=>{
+    const lbl=document.createElement('div');
+    lbl.style.cssText=`position:absolute;left:${wi*17}px;font-size:.65rem;color:var(--text-muted);white-space:nowrap`;
+    lbl.textContent=mn[parseInt(m)];
+    monthRow.appendChild(lbl);
+  });
+
+  // Grid
+  grid.innerHTML='';
+  let activeDays=0,maxStreak=0,curStreak=0;
+  weeks.forEach(wk=>{
+    const col=document.createElement('div');
+    col.className='hm-col';
+    wk.forEach(d=>{
+      const ds=d.toISOString().slice(0,10);
+      const v=lookup[ds]||0;
+      if(v>0){activeDays++;curStreak++;maxStreak=Math.max(maxStreak,curStreak);}
+      else curStreak=0;
+      const cell=document.createElement('div');
+      cell.className='hm-cell';
+      if(d>today){cell.style.background='transparent';}
+      else{cell.style.background=hmColor(v,maxVal,hmType);}
+      const label=hmType==='slaap'&&v>0?`${ds}: ${v}u slaap`:hmType==='sport'&&v>0?`${ds}: ${v} training${v>1?'en':''}`:hmType==='gewicht'&&v>0?`${ds}: meting`:ds;
+      cell.title=label;
+      col.appendChild(cell);
+    });
+    grid.appendChild(col);
+  });
+
+  const statsEl=document.getElementById('hm-stats');
+  if(statsEl) statsEl.textContent=`${activeDays} actieve dagen · langste streak: ${maxStreak}`;
+}
+
+// ===== MIJLPALEN TIJDLIJN =====
+function renderMijlpalen(){
+  const container=document.getElementById('tl-items');
+  if(!container) return;
+  const settings=loadSettings();
+  const gData=load(KEYS.gewicht);
+  if(!gData.length&&!settings.startgewicht){
+    container.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);font-style:italic;padding:8px 0">Voeg gewichtsmetingen toe om de tijdlijn te zien.</div>';
+    return;
+  }
+  const startGew=settings.startgewicht||(gData.length>0?Math.max(...gData.map(x=>x.val)):null);
+  const doelGew=settings.doelgewicht;
+  const latest=gData.length>0?gData[gData.length-1].val:null;
+  if(!startGew||!doelGew){
+    container.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);font-style:italic;padding:8px 0">Stel start- en doelgewicht in via Instellingen.</div>';
+    return;
+  }
+  const stappen=[];
+  stappen.push({kg:startGew,label:'Start',type:'start'});
+  let next=Math.floor(startGew/5)*5;
+  if(next>=startGew) next-=5;
+  while(next>doelGew){
+    if(next<startGew) stappen.push({kg:next,label:`${(startGew-next).toFixed(0)} kg eraf`});
+    next-=5;
+  }
+  stappen.push({kg:doelGew,label:'Doel bereikt!',type:'doel'});
+
+  let dagPerKg=null;
+  if(gData.length>=2){
+    const recent=gData.slice(-7);
+    const days=(new Date(recent[recent.length-1].datum)-new Date(recent[0].datum))/(86400000);
+    const verlies=recent[0].val-recent[recent.length-1].val;
+    if(days>0&&verlies>0) dagPerKg=days/verlies;
+  }
+
+  // Horizontale tijdlijn
+  container.style.cssText='display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding-bottom:6px';
+  container.innerHTML=stappen.map((s,i)=>{
+    const behaald=latest!==null&&latest<=s.kg;
+    const isActief=latest!==null&&!behaald&&(i===0||(stappen[i-1]&&latest<=stappen[i-1].kg));
+    const dotClass=behaald?'done':isActief?'active':'future';
+    const badgeClass=behaald?'done':isActief?'active':'future';
+    const badgeText=behaald?'✓':isActief?'→':'';
+    let sub='';
+    if(!behaald&&dagPerKg&&latest){
+      const nodig=latest-s.kg;
+      if(nodig>0){
+        const dagenNodig=Math.ceil(nodig*dagPerKg);
+        const datum=new Date();datum.setDate(datum.getDate()+dagenNodig);
+        sub=datum.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+      }
+    }
+    const isLast=i===stappen.length-1;
+    return `<div style="display:flex;align-items:flex-start;flex:1;min-width:90px">
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+        <div style="display:flex;align-items:center;width:100%">
+          ${i>0?`<div style="flex:1;height:2px;background:${behaald?'var(--sage-light)':'var(--border)'};margin-top:7px"></div>`:'<div style="flex:1"></div>'}
+          <div class="tl-dot ${dotClass}" style="flex-shrink:0"></div>
+          ${!isLast?`<div style="flex:1;height:2px;background:${behaald?'var(--sage-light)':'var(--border)'};margin-top:7px"></div>`:'<div style="flex:1"></div>'}
+        </div>
+        <div style="text-align:center;margin-top:6px;padding:0 4px">
+          <div style="font-size:.7rem;font-weight:700;color:var(--text-muted)">${s.kg} kg</div>
+          <div style="font-size:.72rem;color:var(--text-soft);margin-top:1px">${s.label}</div>
+          ${badgeText?`<span class="tl-badge ${badgeClass}" style="margin-top:3px;display:inline-block">${badgeText}</span>`:''}
+          ${sub?`<div style="font-size:.65rem;color:var(--text-muted);margin-top:2px">${sub}</div>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== VOORTGANG CARD =====
+function renderVoortgang(){
+  const settings=loadSettings();
+  const gData=load(KEYS.gewicht);
+  const latest=gData.length>0?gData[gData.length-1].val:null;
+  const startGew=settings.startgewicht
+    ||(gData.length>0 ? Math.max(...gData.map(x=>x.val)) : null);
+  const doelGew=settings.doelgewicht;
+
+  // Goal chip
+  const chip=document.getElementById('dash-goal-chip');
+  if(chip) chip.textContent=doelGew?`🎯 Doel: ${doelGew} kg`:'⚙ Stel doel in';
+
+  // Progress bar
+  let pct=0;
+  if(startGew&&doelGew&&latest&&startGew!==doelGew)
+    pct=Math.max(0,Math.min(100,Math.round((startGew-latest)/(startGew-doelGew)*100)));
+  const bar=document.getElementById('dash-progress');
+  if(bar) bar.style.width=pct+'%';
+
+  // Labels
+  const sl=document.getElementById('dash-start-label'),gl=document.getElementById('dash-goal-label');
+  if(sl) sl.textContent=startGew?startGew+'kg':'Start';
+  if(gl) gl.textContent=doelGew?doelGew+'kg':'Doel';
+
+  // Stats
+  const afEl=document.getElementById('vg-af');
+  const nogEl=document.getElementById('vg-nog');
+  const pctEl=document.getElementById('vg-pct');
+  if(!startGew||!doelGew||!latest){
+    if(afEl) afEl.textContent='—';
+    if(nogEl) nogEl.textContent='—';
+    if(pctEl){pctEl.textContent='—';pctEl.style.color='var(--text-muted)';}
+    return;
+  }
+
+  const af=Math.max(0,startGew-latest);
+  const nog=Math.max(0,latest-doelGew);
+  if(afEl) afEl.textContent=af.toFixed(1);
+  if(nogEl) nogEl.textContent=nog>0?nog.toFixed(1):'✓';
+  if(pctEl){
+    pctEl.textContent=pct+'%';
+    pctEl.style.color=pct>=100?'var(--sage)':pct>=50?'var(--gold)':'var(--rose)';
+  }
+
+  // Footer: voorspelling + motivatie
+  const footer=document.getElementById('vg-footer');
+  const predictEl=document.getElementById('vg-predict');
+  const motivEl=document.getElementById('vg-motivatie');
+  if(!footer||!predictEl||!motivEl) return;
+
+  // Motiverende tekst op basis van voortgang
+  let motivatie='';
+  if(pct>=100)       motivatie='🎉 Doelgewicht behaald — fantastisch gedaan!';
+  else if(pct>=75)   motivatie='Je bent er bijna — blijf doorgaan!';
+  else if(pct>=50)   motivatie='Meer dan de helft — je bent op de goede weg!';
+  else if(pct>=25)   motivatie='Goed bezig, je bent onderweg!';
+  else if(pct>0)     motivatie='Een begin is gemaakt — elke gram telt!';
+  else               motivatie='Voeg metingen toe om je voortgang te zien.';
+  motivEl.textContent=motivatie;
+
+  // Einddatum voorspelling via lineaire trend (minimaal 3 metingen)
+  if(gData.length>=3&&nog>0){
+    // Bereken gemiddeld gewichtsverlies per dag over laatste 14 metingen
+    const recent=gData.slice(-14);
+    const days=(new Date(recent[recent.length-1].datum)-new Date(recent[0].datum))/(1000*60*60*24);
+    const verliesPerDag=days>0?(recent[0].val-recent[recent.length-1].val)/days:0;
+    if(verliesPerDag>0){
+      const dagenNodig=Math.ceil(nog/verliesPerDag);
+      const einddatum=new Date();
+      einddatum.setDate(einddatum.getDate()+dagenNodig);
+      const formatted=einddatum.toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'});
+      predictEl.innerHTML=`📅 Op dit tempo bereik je je doel rond <strong>${formatted}</strong> (±${dagenNodig} dagen)`;
+      footer.style.display='flex';
+    } else if(verliesPerDag<0){
+      predictEl.innerHTML='📈 Huidig gewicht stijgt — pas je strategie aan.';
+      footer.style.display='flex';
+    } else {
+      predictEl.innerHTML='➡️ Gewicht stabiel — meer activiteit of aanpassing nodig.';
+      footer.style.display='flex';
+    }
+  } else if(pct>=100){
+    predictEl.innerHTML='🏆 Doel bereikt!';
+    footer.style.display='flex';
+  } else {
+    footer.style.display=motivatie?'flex':'none';
+    predictEl.textContent='';
+  }
+}
+
+// ===== DASHBOARD =====
+
+function renderDashboard(){
+  const settings=loadSettings(),gData=load(KEYS.gewicht),sData=load(KEYS.sport),slData=load(KEYS.slaap);
+  const goal=parseInt(settings.waterdoel)||8,sportDoel=parseInt(settings.sportdoel)||3;
+  const wFilled=getWaterToday(),latest=gData.length>0?gData[gData.length-1].val:null;
+
+  // Naam in greeting
+  const naam=settings.naam||'';
+  const greetEl=document.getElementById('welcome-greeting');
+  if(greetEl) greetEl.textContent=naam||new Date().toLocaleDateString('nl-NL',{weekday:'long'});
+
+  document.getElementById('dash-gewicht').textContent=latest?latest.toFixed(1):'—';
+  const thisWeekSport=sData.filter(x=>weekKey(x.datum)===weekKey(todayStr())).length;
+  document.getElementById('dash-sport').textContent=thisWeekSport;
+  document.getElementById('dash-water').textContent=wFilled;
+  document.getElementById('dash-water-unit').textContent='/ '+goal;
+
+  // Slaap stat (gisteren)
+  const gisteren=new Date();gisteren.setDate(gisteren.getDate()-1);
+  const gisterenStr=gisteren.toISOString().slice(0,10);
+  const slaapGister=slData.find(x=>x.datum===gisterenStr)||slData.find(x=>x.datum===todayStr());
+  const slaapEl=document.getElementById('dash-slaap');
+  const slaapKwEl=document.getElementById('dash-slaap-kwaliteit');
+  if(slaapGister){
+    if(slaapEl) slaapEl.textContent=slaapGister.uren;
+    if(slaapKwEl){
+      const u=slaapGister.uren;
+      const label=u<6?'Kort':u<=8?'Prima':u>8?'Lang':'—';
+      const cls=u<6?'badge-bad':u<=8?'badge-gold':'badge-good';
+      slaapKwEl.textContent=label;
+      slaapKwEl.className='stat-delta badge '+cls;
+    }
+  } else {
+    if(slaapEl) slaapEl.textContent='—';
+    if(slaapKwEl){slaapKwEl.textContent='—';slaapKwEl.className='stat-delta badge badge-neutral';}
+  }
+
+  const delta=document.getElementById('dash-gewicht-delta');
+  if(gData.length>=2){const diff=gData[gData.length-1].val-gData[gData.length-2].val;
+    delta.textContent=(diff>0?'+':'')+diff.toFixed(1)+' kg';delta.className='stat-delta badge '+(diff<0?'badge-good':diff>0?'badge-bad':'badge-neutral');}
+  else{delta.textContent='—';delta.className='stat-delta badge badge-neutral';}
+
+  document.getElementById('streak-water').textContent=calcWaterStreak();
+  document.getElementById('streak-sport').textContent=calcSportStreak();
+  renderBMI(latest);
+  renderVoortgang();
+  renderMijlpalen();
+
+  // Sport weekdoel ring
+  const circ=2*Math.PI*21;
+  const fill=document.getElementById('sport-ring-fill');
+  fill.style.strokeDasharray=circ;
+  fill.style.strokeDashoffset=circ*(1-Math.min(1,thisWeekSport/sportDoel));
+  document.getElementById('sport-ring-text').textContent=`${thisWeekSport}/${sportDoel}`;
+  if(thisWeekSport>=sportDoel){document.getElementById('sport-doel-title').textContent='🎉 Weekdoel gehaald!';fill.style.stroke='var(--sage)';}
+  else{document.getElementById('sport-doel-title').textContent='Weekdoel sport';fill.style.stroke='var(--rose)';}
+  document.getElementById('sport-doel-sub').textContent=thisWeekSport>=sportDoel?`${thisWeekSport} van ${sportDoel} trainingen — geweldig!`:`Nog ${sportDoel-thisWeekSport} training${sportDoel-thisWeekSport!==1?'en':''} nodig.`;
+
+  // Weight chart
+  destroyChart('weightChart');
+  try{
+    const ctx=document.getElementById('weightChart').getContext('2d');
+    if(gData.length>0){
+      const last=gData.slice(-14);
+      const vals=last.map(x=>x.val);
+      const minVal=Math.min(...vals)-2;
+      const maxVal=Math.max(...vals)+2;
+      const grad=ctx.createLinearGradient(0,0,0,260);
+      grad.addColorStop(0,'rgba(200,149,74,0.15)');
+      grad.addColorStop(1,'rgba(200,149,74,0)');
+      const cfg=chartDefaults();
+
+      // Trendlijn via lineaire regressie
+      const trend=calcTrendline(last);
+      const datasets=[{
+        data:vals,
+        borderColor:'#c8954a',
+        backgroundColor:grad,
+        borderWidth:2.5,
+        pointBackgroundColor:'#c8954a',
+        pointRadius:5,
+        pointBorderColor:'#fff',
+        pointBorderWidth:2,
+        tension:0.4,
+        fill:true,
+        order:2
+      }];
+      if(trend){
+        // Trendlijn: alleen eerste en laatste punt, rest null
+        const trendData=vals.map((_,i)=>i===0?parseFloat(trend[0].toFixed(1)):i===vals.length-1?parseFloat(trend[1].toFixed(1)):null);
+        datasets.push({
+          data:trendData,
+          borderColor:'rgba(196,122,122,0.55)',
+          borderWidth:1.5,
+          pointRadius:0,
+          tension:0,
+          fill:false,
+          spanGaps:true,
+          order:1
+        });
+      }
+
+      charts['weightChart']=new Chart(ctx,{
+        type:'line',
+        data:{labels:last.map(x=>fmtDate(x.datum)),datasets},
+        options:{...cfg,
+          plugins:{legend:{display:false},tooltip:cfg.plugins.tooltip},
+          scales:{...cfg.scales,y:{...cfg.scales.y,suggestedMin:minVal,suggestedMax:maxVal}}
+        }
+      });
+    } else {
+      const ctx2=document.getElementById('weightChart').getContext('2d');
+      ctx2.fillStyle='#b89880';ctx2.font='14px Nunito';ctx2.textAlign='center';
+      ctx2.fillText('Voeg je eerste meting toe 🌸',ctx2.canvas.width/2,130);
+    }
+  }catch(e){console.error('Weight chart fout:',e);}
+
+  // Sport chart (deze week)
+  destroyChart('sportChart');
+  const days7=thisWeekDays(),todayIso=todayStr(),sCounts=days7.map(d=>sData.filter(x=>x.datum===d).length);
+  const ctx2=document.getElementById('sportChart').getContext('2d'),cfg2=chartDefaults();
+  charts['sportChart']=new Chart(ctx2,{type:'bar',
+    data:{labels:days7.map(d=>{const p=d.split('-');return `${p[2]}/${p[1]}`;}),
+      datasets:[{data:sCounts,backgroundColor:days7.map(d=>d===todayIso?'rgba(196,122,122,0.8)':d>todayIso?'rgba(196,122,122,0.1)':'rgba(196,122,122,0.4)'),borderColor:days7.map(d=>d>todayIso?'rgba(196,122,122,0.2)':'#c47a7a'),borderWidth:1.5,borderRadius:8}]},
+    options:{...cfg2,scales:{...cfg2.scales,y:{...cfg2.scales.y,beginAtZero:true,ticks:{...cfg2.scales.y.ticks,stepSize:1}}}}});
+
+  // Water cups in dashboard
+  renderWaterCups('dash-cups',wFilled,goal,true);
+  const wb=document.getElementById('water-pct-badge');
+  const pct=Math.min(100,Math.round(wFilled/goal*100));
+  if(wb){wb.textContent=pct+'%';wb.className='badge '+(pct>=100?'badge-good':pct>50?'badge-gold':'badge-neutral');}
+  const wp=document.getElementById('dash-water-progress');
+  if(wp) wp.style.width=pct+'%';
+
+  updateQuickWaterCount();
+  renderDashSlaapChart();
+  renderQuote();
+}
+
+// ===== VISIBILITY TOGGLES =====
+const VIS_DEFAULTS={gewicht:true,sport:true,water:true,slaap:true,snel:true,streaks:true,voortgang:true,weekdoel:true,bmi:true};
+
+function getVis(){
+  const s=loadSettings();
+  const v={};
+  Object.keys(VIS_DEFAULTS).forEach(k=>{ v[k]= s['show_'+k]!==undefined ? s['show_'+k] : VIS_DEFAULTS[k]; });
+  return v;
+}
+
+function applyVisibility(){
+  const v=getVis();
+
+  // Helper
+  function show(id,visible){ const el=document.getElementById(id);if(el) el.style.display=visible?'':'none'; }
+
+  // Stat cards
+  show('stat-gewicht', v.gewicht);
+  show('stat-sport', v.sport);
+  show('stat-water', v.water);
+  show('stat-bmi', v.bmi);
+  show('stat-slaap', v.slaap);
+
+  // Nav items (0=dashboard,1=gewicht,2=sport,3=water,4=slaap,5=prestaties,6=instellingen)
+  const navItems=document.querySelectorAll('.nav-item');
+  if(navItems[1]) navItems[1].style.display=v.gewicht?'':'none';
+  if(navItems[2]) navItems[2].style.display=v.sport?'':'none';
+  if(navItems[3]) navItems[3].style.display=v.water?'':'none';
+  if(navItems[4]) navItems[4].style.display=v.slaap?'':'none';
+
+  // Quick add inline sections
+  show('qrow-gewicht', v.gewicht && v.snel);
+  show('qrow-sport', v.sport && v.snel);
+  const qWaterBtn=document.querySelector('#dash-water-card .btn.sage');
+  if(qWaterBtn) qWaterBtn.style.display=v.water&&v.snel?'':'none';
+  const qWaterCount=document.getElementById('q-water-count');
+  if(qWaterCount) qWaterCount.style.display=v.water&&v.snel?'':'none';
+
+  // Dashboard widget cards
+  show('dash-streaks', v.streaks);
+  show('dash-slaap-chart-card', v.slaap);
+  show('dash-voortgang', v.voortgang);
+  show('dash-weekdoel', v.weekdoel && v.sport);
+  show('dash-bmi-card', v.bmi);
+  show('dash-gewicht-chart', v.gewicht);
+  show('dash-sport-chart', v.sport);
+  show('dash-water-card', v.water);
+  show('dash-mijlpalen', true); // always show
+
+  // Show/hide entire rows — use grid display to restore
+  function showGrid(id,visible){
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.style.display=visible?'grid':'none';
+  }
+  showGrid('dash-row2', true); // always show — contains all main cards
+  showGrid('dash-row3', v.sport||v.water);
+  // dash-row4 is now an empty placeholder
+  const row4=document.getElementById('dash-row4');
+  if(row4) row4.style.display='none';
+}
+
+function saveToggle(k){
+  const s=loadSettings();
+  const el=document.getElementById('tog-'+k);
+  if(el) s['show_'+k]=el.checked;
+  saveSettingsData(s);
+  applyVisibility();
+}
+
+// ===== INIT =====
+function init(){
+  try{
+  const h=new Date().getHours();
+  const naam=loadSettings().naam||'';
+  const greetEl=document.getElementById('welcome-greeting');
+  if(greetEl) greetEl.textContent=naam||new Date().toLocaleDateString('nl-NL',{weekday:'long'});
+  document.getElementById('welcome-sub').textContent='Hier is je overzicht van vandaag.';
+  const d=new Date();
+  const full=d.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const parts=full.split(' ');
+  document.getElementById('sidebar-day').textContent=parts[0];
+  document.getElementById('sidebar-date').textContent=parts.slice(1).join(' ');
+  document.getElementById('input-gewicht-datum').value=todayStr();
+  document.getElementById('input-slaap-datum').value=todayStr();
+  document.getElementById('q-gewicht-datum').value=todayStr();
+  initSportPills();initQuickSportPills();initSlaapPills();initFabSportPills();
+  document.getElementById('q-slaap-datum').value=todayStr();
+  initBadgeTracking();
+  initHeatmap();
+  applyDarkMode();
+  renderDashboard();
+  renderMotivatie();
+  renderQuote();
+  applyVisibility();
+  checkHerhaling();
+  autoInitSync();
+  }catch(e){console.error('Init error:',e);}
+}
+init();
+</script>
+</body>
+</html>
