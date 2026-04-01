@@ -331,6 +331,7 @@ body { background:var(--cream); color:var(--text); font-family:var(--font-body);
 .view { display:none; }
 .view.active { display:block; animation:fadeUp .3s ease; }
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes dotpulse { 0%,100%{opacity:.25;transform:scale(.8)} 50%{opacity:1;transform:scale(1)} }
 
 /* ===== GRID HELPERS ===== */
 .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
@@ -765,6 +766,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
   <div class="sidebar-footer">
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v1.4.0</div>
   </div>
 </aside>
 
@@ -1571,6 +1573,17 @@ html.dark .mob-sheet{background:var(--card-bg);}
 </div>
 
 </div><!-- /app -->
+
+<!-- Laad-overlay -->
+<div id="init-overlay" style="display:none;position:fixed;inset:0;background:var(--cream);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="font-family:var(--font-head);font-size:1.6rem;color:var(--burgundy)">Mijn <em>Welzijn</em></div>
+  <div style="display:flex;gap:6px">
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);animation:dotpulse 1.2s ease-in-out infinite"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);animation:dotpulse 1.2s ease-in-out .3s infinite"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);animation:dotpulse 1.2s ease-in-out .6s infinite"></div>
+  </div>
+  <div style="font-size:.82rem;color:var(--text-muted)">Data ophalen...</div>
+</div>
 
 <script>
 // ===== DATA =====
@@ -3448,7 +3461,7 @@ function saveToggle(k){
 }
 
 // ===== INIT =====
-function init(){
+async function init(){
   try{
   const h=new Date().getHours();
   const naam=loadSettings().naam||'';
@@ -3468,13 +3481,32 @@ function init(){
   initBadgeTracking();
   initHeatmap();
   applyDarkMode();
+
+  // Laad-overlay tonen
+  const overlay=document.getElementById('init-overlay');
+  if(overlay) overlay.style.display='flex';
+
+  // Firebase eerst laden (max 4 seconden wachten)
+  try{
+    await Promise.race([
+      autoInitSync(),
+      new Promise(r=>setTimeout(r,4000))
+    ]);
+  }catch(e){console.warn('Firebase init failed:',e);}
+
+  // Overlay verbergen en renderen
+  if(overlay) overlay.style.display='none';
   renderDashboard();
   renderMotivatie();
   renderQuote();
   applyVisibility();
   checkHerhaling();
-  autoInitSync();
-  }catch(e){console.error('Init error:',e);}
+  }catch(e){
+    console.error('Init error:',e);
+    const overlay=document.getElementById('init-overlay');
+    if(overlay) overlay.style.display='none';
+    renderDashboard();
+  }
 }
 init();
 </script>
