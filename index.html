@@ -2174,9 +2174,9 @@ function exportVolledigRapport(){
   const wDoel=parseInt(s.waterdoel)||8;
   const cDoel=parseInt(s.coladoel)||3;
 
-  const sportt={};sData.forEach(x=>{sportt[x.type]=(sportt[x.type]||0)+1;});
+  const sportt={};sData.forEach(x=>{const k=x.sport||x.type||'Onbekend';sportt[k]=(sportt[k]||0)+1;});
   const sportTagsHtml=Object.entries(sportt).sort((a,b)=>b[1]-a[1])
-    .map(([t,n])=>`<span style="display:inline-block;padding:3px 11px;border-radius:999px;font-size:9.5pt;margin:2px;background:#fdf0e0;border:1px solid #e8c88a;color:#7a3030">${t} ×${n}</span>`).join('');
+    .filter(([t])=>t&&t!=='undefined').map(([t,n])=>`<span style="display:inline-block;padding:3px 11px;border-radius:999px;font-size:9.5pt;margin:2px;background:#fdf0e0;border:1px solid #e8c88a;color:#7a3030">${t} ×${n}</span>`).join('');
 
   const ernstKM=['','#2e7d32','#e67e00','#c0392b','#8e0000'];
   const ernstLM=['','Licht','Matig','Flink','Ernstig'];
@@ -2245,7 +2245,7 @@ function exportVolledigRapport(){
         const x=lW+w*(cW+cG);
         const bg=skl(ds);
         const tr=sData.find(x=>x.datum===ds);
-        const tip=tr?`<title>${ds}: ${tr.duur} min — ${tr.type}</title>`:'';
+        const tip=tr?`<title>${ds}: ${tr.duur} min — ${tr.sport||tr.type||''}</title>`:'';
         svg+=`<rect x="${x}" y="${y}" width="${cW}" height="${cH}" rx="3" fill="${bg}">${tip}</rect>`;
         // Datum in cel
         if(showDates&&inR(ds)){
@@ -2308,6 +2308,7 @@ body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:11pt;color:#2c1
 @media print{
   body{padding:0;background:#fff;}
   .wrap{max-width:100%;}
+  .no-print{display:none!important;}
   .header,.sb,.sectie{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .cw{height:180px;}
 }
@@ -2316,6 +2317,11 @@ body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:11pt;color:#2c1
 <body>
 <div class="wrap">
 
+<div style="position:sticky;top:0;z-index:99;display:flex;justify-content:flex-end;padding:10px 0 6px;background:#fdf6ee;margin-bottom:-8px" class="no-print">
+  <button onclick="window.print()" style="background:#7a3030;color:#fff;border:none;border-radius:999px;padding:10px 24px;font-size:10pt;font-weight:700;cursor:pointer;font-family:'Segoe UI',Arial,sans-serif;display:flex;align-items:center;gap:8px">
+    <span style="font-size:14px">🖨</span> Printen / Opslaan als PDF
+  </button>
+</div>
 <div class="header">
   <div class="h-icon">📋</div>
   <div class="h-main">
@@ -2349,7 +2355,10 @@ ${slData.length>0?`<div class="sectie">
 </div>`:''}
 
 ${sData.length>0?`<div class="sectie">
-  <div class="st">Sport &amp; Beweging — ${sData.length} trainingen · ${totMin} min totaal</div>
+  <div class="st">Sport &amp; Beweging</div>
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap">
+    <span style="font-size:10pt;color:#b89880">${sData.length} trainingen &nbsp;·&nbsp; ${totMin} min totaal</span>
+  </div>
   <div style="margin-bottom:10px">${sportTagsHtml||'—'}</div>
   ${maakHeatmapSVG()}
   <div class="leg">
@@ -2361,12 +2370,14 @@ ${sData.length>0?`<div class="sectie">
 </div>`:''}
 
 ${wData.length>0?`<div class="sectie">
-  <div class="st">💧 Water — gem. ${gemWater} glazen/dag</div>
+  <div class="st">💧 Water</div>
+  <div style="font-size:10pt;color:#b89880;margin-bottom:10px">Gemiddeld ${gemWater} glazen per dag</div>
   <div class="cw"><canvas id="cWater"></canvas></div>
 </div>`:''}
 
 ${colaArr.length>0?`<div class="sectie">
-  <div class="st">🥤 Cola — gem. ${gemCola} glazen/dag</div>
+  <div class="st">🥤 Cola</div>
+  <div style="font-size:10pt;color:#b89880;margin-bottom:10px">Gemiddeld ${gemCola} glazen per dag</div>
   <div class="cw"><canvas id="cCola"></canvas></div>
 </div>`:''}
 
@@ -2447,7 +2458,7 @@ new Chart(document.getElementById('cCola'),{type:'line',
     scales:{x:base.scales.x,y:{...base.scales.y,beginAtZero:true,suggestedMax:${Math.max(cMax,3).toFixed(1)}}}},
   plugins:[lblPlugin(v=>v>${cDoel}?'#7b241c':'#c0392b')]});`:''}
 
-window.onload=()=>setTimeout(()=>window.print(),900);
+
 <\/script>
 </body>
 </html>`;
