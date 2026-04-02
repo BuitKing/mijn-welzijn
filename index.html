@@ -3238,80 +3238,72 @@ function doCheckin(){
 
 // Centrale render voor meldingen rij
 function renderMeldingenRij(){
-  window._checkinHtml='';
-  window._inactiefHtml='';
-  renderInactiefAlarm();
-  renderCheckin(); // renderCheckin calls renderMeldingenRij at end
-  // Combineer in één rij
-  const rij=document.getElementById('meldingen-rij');
-  if(!rij) return;
-  const checkinHtml=window._checkinHtml||'';
-  const inactiefHtml=window._inactiefHtml||'';
-  const beiden=checkinHtml&&inactiefHtml;
-  if(!checkinHtml&&!inactiefHtml){
-    rij.style.display='none';return;
-  }
-  rij.style.display='flex';
-  rij.style.flexWrap='wrap';
-  rij.style.gap='12px';
-  rij.innerHTML=
-    (checkinHtml?`<div style="flex:1;min-width:${beiden?'280px':'100%'}">${checkinHtml}</div>`:'') +
-    (inactiefHtml?`<div style="flex:1;min-width:${beiden?'280px':'100%'}">${inactiefHtml}</div>`:'');
-}
-
-function renderInactiefAlarm(){
-  const gData=load(KEYS.gewicht);
-  const sData=load(KEYS.sport);
-  const slData=load(KEYS.slaap);
-  const today=new Date();
-  function dagenGeleden(ds){if(!ds)return 999;return Math.floor((today-new Date(ds))/(864e5));}
-  const laG=gData.length>0?gData[gData.length-1].datum:null;
-  const laS=sData.length>0?sData[sData.length-1].datum:null;
-  const laSl=slData.length>0?slData[slData.length-1].datum:null;
-  const meldingen=[];
-  // Gewicht: pas na 7 dagen (1 week)
-  if(gData.length>0&&dagenGeleden(laG)>=7)
-    meldingen.push({icon:'⚖️',tekst:`${dagenGeleden(laG)} dagen geen gewicht gelogd`,tab:'gewicht'});
-  if(sData.length>0&&dagenGeleden(laS)>=5)
-    meldingen.push({icon:'🏃',tekst:`${dagenGeleden(laS)} dagen geen training`,tab:'sport'});
-  if(slData.length>0&&dagenGeleden(laSl)>=2)
-    meldingen.push({icon:'😴',tekst:`${dagenGeleden(laSl)} dagen geen slaap gelogd`,tab:'slaap'});
-  if(!meldingen.length){window._inactiefHtml='';return;}
-  window._inactiefHtml=`<div style="background:var(--sky-pale);border:1.5px solid var(--sky);border-radius:var(--radius);padding:10px 14px;display:flex;flex-direction:column;gap:7px;height:100%">
-    <div style="font-size:.72rem;font-weight:700;color:var(--sky);text-transform:uppercase;letter-spacing:.06em">Even bijhouden 📋</div>
-    ${meldingen.map(m=>`<div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:1rem">${m.icon}</span>
-      <span style="flex:1;font-size:.78rem;color:var(--text-soft)">${m.tekst}</span>
-      <button onclick="switchTab('${m.tab}')" style="background:var(--sky);color:#fff;border:none;border-radius:999px;padding:3px 10px;font-size:.7rem;cursor:pointer;white-space:nowrap">Invullen →</button>
-    </div>`).join('')}
-  </div>`;
-}
-
-function renderCheckin(){
-  const data=loadCheckin();
-  const vandaagIngecheckt=data.last===todayStr();
+  // Bouw check-in HTML
+  const checkinData=loadCheckin();
+  const vandaagIngecheckt=checkinData.last===todayStr();
+  let checkinHtml='';
   if(vandaagIngecheckt){
-    window._checkinHtml=`<div class="checkin-done" style="height:100%;min-height:40px">
+    checkinHtml=`<div class="checkin-done" style="min-height:40px">
       <span style="font-size:1.2rem">✅</span>
-      <span style="font-size:.82rem">Vandaag ingecheckt — streak: <strong>${data.streak} dag${data.streak!==1?'en':''}</strong></span>
-      <span style="margin-left:auto;font-size:.7rem;color:var(--sage-light)">Beste: ${data.best} dagen</span>
+      <span style="font-size:.82rem">Ingecheckt — streak: <strong>${checkinData.streak} dag${checkinData.streak!==1?'en':''}</strong></span>
+      <span style="margin-left:auto;font-size:.7rem;color:var(--sage-light)">Beste: ${checkinData.best}</span>
     </div>`;
   } else {
     const gisteren=new Date();gisteren.setDate(gisteren.getDate()-1);
-    const streakActief=data.last===gisteren.toISOString().slice(0,10);
-    const streakNum=streakActief?data.streak:0;
-    window._checkinHtml=`<div class="checkin-card" style="padding:12px 16px">
+    const streakActief=checkinData.last===gisteren.toISOString().slice(0,10);
+    const streakNum=streakActief?checkinData.streak:0;
+    checkinHtml=`<div class="checkin-card" style="padding:12px 16px">
       <div class="checkin-fire" style="font-size:1.6rem">${streakNum>=7?'🏆':streakNum>=3?'🔥':'⚡'}</div>
       <div class="checkin-info">
         <div class="checkin-streak" style="font-size:1.3rem">${streakNum} dag${streakNum!==1?'en':''}</div>
-        <div class="checkin-sub" style="font-size:.7rem">huidige streak${data.best>0?' · beste: '+data.best:''}
-        </div>
+        <div class="checkin-sub" style="font-size:.7rem">streak${checkinData.best>0?' · beste: '+checkinData.best:''}</div>
       </div>
       <button class="checkin-btn-main" style="padding:8px 16px;font-size:.8rem" onclick="doCheckin()">+5 XP · Inchecken</button>
     </div>`;
   }
-  renderMeldingenRij();
+
+  // Bouw inactief alarm HTML
+  const gData=load(KEYS.gewicht),sData=load(KEYS.sport),slData=load(KEYS.slaap);
+  const today=new Date();
+  function dagenGel(ds){if(!ds)return 999;return Math.floor((today-new Date(ds))/(864e5));}
+  const laG=gData.length>0?gData[gData.length-1].datum:null;
+  const laS=sData.length>0?sData[sData.length-1].datum:null;
+  const laSl=slData.length>0?slData[slData.length-1].datum:null;
+  const meldingen=[];
+  if(gData.length>0&&dagenGel(laG)>=7)
+    meldingen.push({icon:'⚖️',tekst:`${dagenGel(laG)} dagen geen gewicht`,tab:'gewicht'});
+  if(sData.length>0&&dagenGel(laS)>=5)
+    meldingen.push({icon:'🏃',tekst:`${dagenGel(laS)} dagen geen training`,tab:'sport'});
+  if(slData.length>0&&dagenGel(laSl)>=2)
+    meldingen.push({icon:'😴',tekst:`${dagenGel(laSl)} dagen geen slaap`,tab:'slaap'});
+  let inactiefHtml='';
+  if(meldingen.length){
+    inactiefHtml=`<div style="background:var(--sky-pale);border:1.5px solid var(--sky);border-radius:var(--radius);padding:10px 14px;display:flex;flex-direction:column;gap:7px">
+      <div style="font-size:.72rem;font-weight:700;color:var(--sky);text-transform:uppercase;letter-spacing:.06em">Even bijhouden 📋</div>
+      ${meldingen.map(m=>`<div style="display:flex;align-items:center;gap:8px">
+        <span>${m.icon}</span>
+        <span style="flex:1;font-size:.78rem;color:var(--text-soft)">${m.tekst}</span>
+        <button onclick="switchTab('${m.tab}')" style="background:var(--sky);color:#fff;border:none;border-radius:999px;padding:3px 10px;font-size:.7rem;cursor:pointer;white-space:nowrap">Invullen →</button>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // Toon gecombineerd
+  const rij=document.getElementById('meldingen-rij');
+  if(!rij) return;
+  const beiden=checkinHtml&&inactiefHtml;
+  if(!checkinHtml&&!inactiefHtml){rij.style.display='none';return;}
+  rij.style.display='flex';
+  rij.style.flexWrap='wrap';
+  rij.style.gap='12px';
+  rij.innerHTML=
+    `<div style="flex:1;min-width:${beiden?'280px':'100%'}">${checkinHtml}</div>` +
+    (inactiefHtml?`<div style="flex:1;min-width:${beiden?'280px':'100%'}">${inactiefHtml}</div>`:'');
 }
+
+// Wrappers voor compat
+function renderInactiefAlarm(){renderMeldingenRij();}
+function renderCheckin(){renderMeldingenRij();}
 
 // ===== PWA SETUP (#32) =====
 function setupPWA(){
