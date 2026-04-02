@@ -2174,25 +2174,20 @@ function exportVolledigRapport(){
   const wDoel=parseInt(s.waterdoel)||8;
   const cDoel=parseInt(s.coladoel)||3;
 
-  // Sport types
   const sportt={};sData.forEach(x=>{sportt[x.type]=(sportt[x.type]||0)+1;});
   const sportTagsHtml=Object.entries(sportt).sort((a,b)=>b[1]-a[1])
     .map(([t,n])=>`<span style="display:inline-block;padding:3px 11px;border-radius:999px;font-size:9.5pt;margin:2px;background:#fdf0e0;border:1px solid #e8c88a;color:#7a3030">${t} ×${n}</span>`).join('');
 
-  // Klachten per dag
   const ernstKM=['','#2e7d32','#e67e00','#c0392b','#8e0000'];
   const ernstLM=['','Licht','Matig','Flink','Ernstig'];
   function klachtenPerDagHtml(){
     if(!kData.length) return '';
     const perDag={};
     kData.forEach(k=>{if(!perDag[k.datum])perDag[k.datum]=[];perDag[k.datum].push(k);});
-    const dagen=Object.keys(perDag).sort();
-    return dagen.map(dag=>{
+    return Object.keys(perDag).sort().map(dag=>{
       const ks=perDag[dag];
       return`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:0.5px solid #f0e4d4">
-        <div style="font-size:8pt;font-weight:700;color:#7a3030;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;display:flex;align-items:center;gap:6px">
-          ${fmtD(dag)}<span style="flex:1;height:1px;background:#f0e4d4;display:inline-block"></span>
-        </div>
+        <div style="font-size:8pt;font-weight:700;color:#7a3030;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px">${fmtD(dag)}</div>
         ${ks.map(k=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:#fdf6ee;margin-bottom:4px">
           <span style="font-size:1.1rem;width:24px;text-align:center;flex-shrink:0">${k.icon}</span>
           <span style="font-weight:700;font-size:9.5pt;color:#3d2b1f;min-width:110px">${k.klacht}</span>
@@ -2204,7 +2199,7 @@ function exportVolledigRapport(){
     }).join('');
   }
 
-  // Sport heatmap SVG
+  // Heatmap SVG met datums in cellen
   function maakHeatmapSVG(){
     const start=new Date(van);
     const dow=start.getDay();
@@ -2217,35 +2212,55 @@ function exportVolledigRapport(){
       if(!tr)return'#f0e4d4';
       return tr.duur<30?'#c8e6c9':tr.duur<=45?'#66bb6a':'#2e7d32';
     }
+    function txtKleur(bg){
+      // Donkere achtergrond = lichte tekst, lichte achtergrond = donkere tekst
+      if(bg==='#2e7d32') return'#e8f5e9';
+      if(bg==='#66bb6a') return'#1b5e20';
+      if(bg==='#c8e6c9') return'#2e7d32';
+      return'#c8b8a8'; // beige leeg/buiten range
+    }
     const dagNm=['Ma','Di','Wo','Do','Vr','Za','Zo'];
-    const lW=26,cH=17,cG=3,tP=20,tH=tP+(cH+cG)*7+4;
+    const lW=28,cH=20,cG=3,tP=22;
+    const tH=tP+(cH+cG)*7+4;
     const totW=700;
-    const cW=Math.max(12,Math.floor((totW-lW-(weeks-1)*cG)/weeks));
+    const cW=Math.max(18,Math.floor((totW-lW-(weeks-1)*cG)/weeks));
     const vbW=lW+(cW+cG)*weeks;
+    const showDates=cW>=18; // alleen datums tonen als cel breed genoeg
     let svg=`<svg width="100%" height="${tH}" viewBox="0 0 ${vbW} ${tH}" preserveAspectRatio="xMinYMin meet" xmlns="http://www.w3.org/2000/svg">`;
     let pM='';
     for(let w=0;w<weeks;w++){
       const d=new Date(start);d.setDate(start.getDate()+w*7);
       const mo=d.toLocaleDateString('nl-NL',{month:'short'});
-      if(mo!==pM){svg+=`<text x="${lW+w*(cW+cG)}" y="13" font-size="8" fill="#b89880" font-family="Segoe UI,Arial,sans-serif">${mo}</text>`;pM=mo;}
+      if(mo!==pM){
+        svg+=`<text x="${lW+w*(cW+cG)}" y="14" font-size="8" fill="#b89880" font-family="Segoe UI,Arial,sans-serif">${mo}</text>`;
+        pM=mo;
+      }
     }
     for(let dag=0;dag<7;dag++){
       const y=tP+dag*(cH+cG);
-      svg+=`<text x="${lW-4}" y="${y+cH*0.72}" text-anchor="end" font-size="8" fill="#b89880" font-family="Segoe UI,Arial,sans-serif">${dagNm[dag]}</text>`;
+      svg+=`<text x="${lW-4}" y="${y+cH*0.68}" text-anchor="end" font-size="8" fill="#b89880" font-family="Segoe UI,Arial,sans-serif">${dagNm[dag]}</text>`;
       for(let w=0;w<weeks;w++){
         const d=new Date(start);d.setDate(start.getDate()+w*7+dag);
         const ds=d.toISOString().slice(0,10);
         const x=lW+w*(cW+cG);
+        const bg=skl(ds);
         const tr=sData.find(x=>x.datum===ds);
         const tip=tr?`<title>${ds}: ${tr.duur} min — ${tr.type}</title>`:'';
-        svg+=`<rect x="${x}" y="${y}" width="${cW}" height="${cH}" rx="3" fill="${skl(ds)}">${tip}</rect>`;
+        svg+=`<rect x="${x}" y="${y}" width="${cW}" height="${cH}" rx="3" fill="${bg}">${tip}</rect>`;
+        // Datum in cel
+        if(showDates&&inR(ds)){
+          const dayNum=parseInt(ds.split('-')[2]);
+          const tc=txtKleur(bg);
+          const fs=cW<22?6:cW<28?7:8;
+          svg+=`<text x="${x+cW/2}" y="${y+cH*0.7}" text-anchor="middle" font-size="${fs}" fill="${tc}" font-family="Segoe UI,Arial,sans-serif" pointer-events="none">${dayNum}</text>`;
+        }
       }
     }
     svg+='</svg>';
     return svg;
   }
 
-  // Chart data als JSON
+  // Chart data
   const gLabels=JSON.stringify(gData.map(x=>fmtS(x.datum)));
   const gVals=JSON.stringify(gData.map(x=>x.val));
   const gMin=gData.length?Math.min(...gData.map(x=>x.val))-1:0;
@@ -2257,10 +2272,12 @@ function exportVolledigRapport(){
 
   const wLabels=JSON.stringify(wData.map(x=>fmtS(x.datum)));
   const wVals=JSON.stringify(wData.map(x=>x.glazen));
+  const wMax=wData.length?Math.max(...wData.map(x=>x.glazen))*1.25:10;
 
   const cLabels=JSON.stringify(colaArr.map(x=>fmtS(x.datum)));
   const cVals=JSON.stringify(colaGlazen);
   const cKleuren=JSON.stringify(colaGlazen.map(v=>v>cDoel?'#7b241c':'#c0392b'));
+  const cMax=colaGlazen.length?Math.max(...colaGlazen)*1.25:6;
 
   const html=`<!DOCTYPE html>
 <html lang="nl">
@@ -2271,26 +2288,29 @@ function exportVolledigRapport(){
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:11pt;color:#2c1a0e;background:#fdf6ee;padding:28px;}
-.wrap{max-width:760px;margin:0 auto;}
+.wrap{max-width:800px;margin:0 auto;}
 .header{background:#7a3030;border-radius:14px;padding:18px 24px;margin-bottom:18px;display:flex;align-items:center;gap:16px;color:#fff;}
 .h-icon{font-size:1.6rem;flex-shrink:0}
 .h-main{flex:1}
 .h-naam{font-size:1.35rem;font-weight:700;color:#fff;}
 .h-sub{font-size:.85rem;color:rgba(255,255,255,.6);margin-top:3px;}
 .h-badge{background:#c8954a;color:#fff;border-radius:999px;padding:8px 18px;font-size:.85rem;font-weight:700;white-space:nowrap;flex-shrink:0;}
-.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:0;}
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
 .sb{background:#fdf6ee;border-radius:8px;padding:10px 12px;text-align:center;}
 .sn{font-size:17pt;font-weight:700;color:#3d2b1f;}
 .sl{font-size:7.5pt;color:#b89880;margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
 .sectie{background:#fff;border-radius:10px;border:1px solid #e8d5be;padding:14px 20px;margin-bottom:14px;}
 .st{font-size:7.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#7a3030;padding-bottom:8px;border-bottom:1px solid #f0e4d4;margin-bottom:12px;}
-.twee{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-.cw{position:relative;width:100%;height:165px;}
+.cw{position:relative;width:100%;height:200px;}
 .as-lbl{font-size:7pt;color:#b89880;margin-top:4px;}
 .leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:8pt;color:#7a5c48;}
 .lsq{width:10px;height:10px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:3px;}
-.footer{text-align:center;font-size:8.5pt;color:#b89880;margin-top:16px;padding-top:12px;border-top:1px solid #e8d5be;}
-@media print{body{padding:0;background:#fff;} .wrap{max-width:100%;} .header{-webkit-print-color-adjust:exact;print-color-adjust:exact;} .sb,.sectie{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+@media print{
+  body{padding:0;background:#fff;}
+  .wrap{max-width:100%;}
+  .header,.sb,.sectie{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .cw{height:180px;}
+}
 </style>
 </head>
 <body>
@@ -2316,14 +2336,21 @@ body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:11pt;color:#2c1
   </div>
 </div>
 
-${gData.length>0||slData.length>0?`<div class="twee">
-  ${gData.length>0?`<div class="sectie"><div class="st">Gewicht</div><div class="cw"><canvas id="cGew"></canvas></div><div class="as-lbl">Y-as in kg</div></div>`:'<div></div>'}
-  ${slData.length>0?`<div class="sectie"><div class="st">Slaap</div><div class="cw"><canvas id="cSlaap"></canvas></div><div class="as-lbl">Y-as in uren</div></div>`:'<div></div>'}
+${gData.length>0?`<div class="sectie">
+  <div class="st">Gewicht</div>
+  <div class="cw"><canvas id="cGew"></canvas></div>
+  <div class="as-lbl">Y-as in kg</div>
+</div>`:''}
+
+${slData.length>0?`<div class="sectie">
+  <div class="st">Slaap</div>
+  <div class="cw"><canvas id="cSlaap"></canvas></div>
+  <div class="as-lbl">Y-as in uren · groen = goed (&gt;8u) · goud = prima (6–8u) · rood = kort (&lt;6u)</div>
 </div>`:''}
 
 ${sData.length>0?`<div class="sectie">
   <div class="st">Sport &amp; Beweging — ${sData.length} trainingen · ${totMin} min totaal</div>
-  <div style="margin-bottom:10px">${sportTagsHtml}</div>
+  <div style="margin-bottom:10px">${sportTagsHtml||'—'}</div>
   ${maakHeatmapSVG()}
   <div class="leg">
     <span><span class="lsq" style="background:#c8e6c9"></span>Licht &lt;30 min</span>
@@ -2333,9 +2360,14 @@ ${sData.length>0?`<div class="sectie">
   </div>
 </div>`:''}
 
-${wData.length>0||colaArr.length>0?`<div class="twee">
-  ${wData.length>0?`<div class="sectie"><div class="st">💧 Water — gem. ${gemWater} glazen/dag</div><div class="cw" style="height:150px"><canvas id="cWater"></canvas></div></div>`:'<div></div>'}
-  ${colaArr.length>0?`<div class="sectie"><div class="st">🥤 Cola — gem. ${gemCola} glazen/dag</div><div class="cw" style="height:150px"><canvas id="cCola"></canvas></div></div>`:'<div></div>'}
+${wData.length>0?`<div class="sectie">
+  <div class="st">💧 Water — gem. ${gemWater} glazen/dag</div>
+  <div class="cw"><canvas id="cWater"></canvas></div>
+</div>`:''}
+
+${colaArr.length>0?`<div class="sectie">
+  <div class="st">🥤 Cola — gem. ${gemCola} glazen/dag</div>
+  <div class="cw"><canvas id="cCola"></canvas></div>
 </div>`:''}
 
 ${kData.length>0?`<div class="sectie">
@@ -2343,11 +2375,14 @@ ${kData.length>0?`<div class="sectie">
   ${klachtenPerDagHtml()}
 </div>`:''}
 
-<div class="footer">Mijn Welzijn · Rapport ${fmtD(van)} t/m ${fmtD(tot)} · ${naam} · ${nu}</div>
+<div style="text-align:center;font-size:8.5pt;color:#b89880;margin-top:16px;padding-top:12px;border-top:1px solid #e8d5be;">
+  Mijn Welzijn · Rapport ${fmtD(van)} t/m ${fmtD(tot)} · ${naam} · ${nu}
+</div>
 </div>
 
 <script>
-function lblPlugin(getClr,suf){
+// Label plugin — witte achtergrond, geen suffix, altijd boven punt
+function lblPlugin(getClr){
   return{id:'lbl',afterDatasetsDraw(chart){
     const ctx=chart.ctx,meta=chart.getDatasetMeta(0);
     const aL=chart.chartArea.left,aR=chart.chartArea.right,aT=chart.chartArea.top;
@@ -2355,26 +2390,32 @@ function lblPlugin(getClr,suf){
     meta.data.forEach((pt,i)=>{
       const v=chart.data.datasets[0].data[i];if(v==null)return;
       const clr=typeof getClr==='function'?getClr(v):getClr;
-      const bx=Math.max(aL+18,Math.min(pt.x,aR-18));
-      const by=Math.max(aT+13,pt.y-8);
-      const t=String(v)+(suf||''),tw=ctx.measureText(t).width;
-      ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillRect(bx-tw/2-2,by-12,tw+4,13);
+      // Clamp X binnen chartArea zodat eerste en laatste label niet afsnijden
+      const bx=Math.max(aL+22,Math.min(pt.x,aR-22));
+      const by=Math.max(aT+14,pt.y-8);
+      const t=String(v),tw=ctx.measureText(t).width;
+      ctx.fillStyle='rgba(255,255,255,.95)';
+      ctx.fillRect(bx-tw/2-2,by-12,tw+4,13);
       ctx.fillStyle=clr;ctx.fillText(t,bx,by);
     });ctx.restore();
   }};
 }
 
-const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},animation:{duration:0},
-  scales:{x:{grid:{display:false},ticks:{font:{size:8},color:'#b89880',maxRotation:45,autoSkip:true,maxTicksLimit:12}},
-    y:{grid:{color:'#f5ede4'},ticks:{font:{size:8},color:'#b89880'}}}};
+const base={responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false}},animation:{duration:0},
+  scales:{
+    x:{grid:{display:false},ticks:{font:{size:9},color:'#b89880',maxRotation:45,autoSkip:true,maxTicksLimit:16}},
+    y:{grid:{color:'#f5ede4'},ticks:{font:{size:9},color:'#b89880'}}
+  }};
 
 ${gData.length>0?`
 new Chart(document.getElementById('cGew'),{type:'line',
   data:{labels:${gLabels},datasets:[{data:${gVals},borderColor:'#c8954a',borderWidth:2,
     pointBackgroundColor:'#c8954a',pointRadius:5,tension:0.35,fill:true,backgroundColor:'#c8954a14'}]},
-  options:{...base,scales:{x:base.scales.x,y:{...base.scales.y,min:${gMin},max:${gMax},
-    ticks:{...base.scales.y.ticks,callback:v=>v+' kg'}}}},
-  plugins:[lblPlugin('#7a3030','')]});`:''}
+  options:{...base,layout:{padding:{top:20,left:10,right:10}},
+    scales:{x:base.scales.x,y:{...base.scales.y,min:${gMin},max:${gMax},
+      ticks:{...base.scales.y.ticks,callback:v=>v+' kg'}}}},
+  plugins:[lblPlugin('#7a3030')]});`:''}
 
 ${slData.length>0?`
 const slVals=${slVals};
@@ -2382,16 +2423,18 @@ const slKlr=${slKleuren};
 new Chart(document.getElementById('cSlaap'),{type:'line',
   data:{labels:${slLabels},datasets:[{data:slVals,borderColor:'#7a9e7e',borderWidth:2,
     pointBackgroundColor:slKlr,pointRadius:5,tension:0.35,fill:true,backgroundColor:'#7a9e7e14'}]},
-  options:{...base,scales:{x:base.scales.x,y:{...base.scales.y,min:0,max:13,
-    ticks:{...base.scales.y.ticks,callback:v=>v+'u'}}}},
-  plugins:[lblPlugin(v=>v<6?'#e74c3c':v<=8?'#c8954a':'#7a9e7e','')]});`:''}
+  options:{...base,layout:{padding:{top:20,left:10,right:10}},
+    scales:{x:base.scales.x,y:{...base.scales.y,min:0,max:13,
+      ticks:{...base.scales.y.ticks,callback:v=>v+'u'}}}},
+  plugins:[lblPlugin(v=>v<6?'#e74c3c':v<=8?'#c8954a':'#7a9e7e')]});`:''}
 
 ${wData.length>0?`
 new Chart(document.getElementById('cWater'),{type:'line',
   data:{labels:${wLabels},datasets:[{data:${wVals},borderColor:'#7a9e7e',borderWidth:2,
     pointBackgroundColor:'#7a9e7e',pointRadius:5,tension:0.35,fill:true,backgroundColor:'#7a9e7e14'}]},
-  options:{...base,scales:{x:base.scales.x,y:{...base.scales.y,beginAtZero:true,suggestedMax:${wDoel+2}}}},
-  plugins:[lblPlugin('#7a9e7e','')]});`:''}
+  options:{...base,layout:{padding:{top:20,left:10,right:10}},
+    scales:{x:base.scales.x,y:{...base.scales.y,beginAtZero:true,suggestedMax:${Math.max(wMax,3).toFixed(1)}}}},
+  plugins:[lblPlugin('#7a9e7e')]});`:''}
 
 ${colaArr.length>0?`
 const cVals=${cVals};
@@ -2399,8 +2442,9 @@ const cKlr=${cKleuren};
 new Chart(document.getElementById('cCola'),{type:'line',
   data:{labels:${cLabels},datasets:[{data:cVals,borderColor:'#c0392b',borderWidth:2,
     pointBackgroundColor:cKlr,pointRadius:5,tension:0.35,fill:true,backgroundColor:'#c0392b14'}]},
-  options:{...base,scales:{x:base.scales.x,y:{...base.scales.y,beginAtZero:true,suggestedMax:${cDoel+3}}}},
-  plugins:[lblPlugin(v=>v>${cDoel}?'#7b241c':'#c0392b','')]});`:''}
+  options:{...base,layout:{padding:{top:20,left:10,right:10}},
+    scales:{x:base.scales.x,y:{...base.scales.y,beginAtZero:true,suggestedMax:${Math.max(cMax,3).toFixed(1)}}}},
+  plugins:[lblPlugin(v=>v>${cDoel}?'#7b241c':'#c0392b')]});`:''}
 
 window.onload=()=>setTimeout(()=>window.print(),900);
 <\/script>
