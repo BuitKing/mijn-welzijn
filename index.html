@@ -3429,6 +3429,8 @@ function drawSlaapLabels(chartId, dataPoints){
   if(!chart) return;
   const ctx=chart.ctx;
   const meta=chart.getDatasetMeta(0);
+  const canvasW=chart.canvas.width;
+  const canvasH=chart.canvas.height;
   ctx.save();
   meta.data.forEach((point,i)=>{
     const v=dataPoints[i]?.uren||dataPoints[i];
@@ -3439,7 +3441,11 @@ function drawSlaapLabels(chartId, dataPoints){
     ctx.font='600 11px Nunito, sans-serif';
     const tw=ctx.measureText(label).width;
     const bw=tw+pad.x*2, bh=18+pad.y;
-    const bx=x-bw/2, by=y-bh-10;
+    // Clamp zodat box nooit buiten canvas valt
+    let bx=x-bw/2;
+    let by=y-bh-10;
+    bx=Math.max(2, Math.min(bx, canvasW-bw-2));
+    by=Math.max(2, Math.min(by, canvasH-bh-2));
     // box
     const col=slaapColor(v);
     ctx.fillStyle=col+'22';
@@ -3456,7 +3462,7 @@ function drawSlaapLabels(chartId, dataPoints){
     // text
     ctx.fillStyle=col;
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(label,x,by+bh/2);
+    ctx.fillText(label,bx+bw/2,by+bh/2);
   });
   ctx.restore();
 }
