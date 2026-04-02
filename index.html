@@ -1465,6 +1465,82 @@ html.dark .mob-sheet{background:var(--card-bg);}
     </div>
   </div>
 
+  <!-- ===== KLACHTEN ===== -->
+  <div class="view" id="view-klachten">
+    <div class="page-header">
+      <div><div class="page-title">🩺 <em>Klachten</em></div><div class="page-subtitle">Lichamelijke klachten bijhouden en patronen ontdekken</div></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button onclick="exportKlachtenPDF()" class="btn secondary" style="padding:8px 16px;font-size:.82rem">📄 Export voor arts</button>
+        <div class="badge badge-neutral" id="klachten-count-badge" style="font-size:.85rem;padding:8px 16px">0 gelogd</div>
+      </div>
+    </div>
+
+    <!-- Invoer kaart -->
+    <div class="gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">Klacht toevoegen</div>
+
+        <!-- Klacht categorie knoppen -->
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px">Soort klacht</div>
+        <div id="klacht-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <div class="klacht-pill" data-klacht="Buikpijn" data-icon="🤢">🤢 Buikpijn</div>
+          <div class="klacht-pill" data-klacht="Hoofdpijn" data-icon="🤕">🤕 Hoofdpijn</div>
+          <div class="klacht-pill" data-klacht="Vermoeidheid" data-icon="😩">😩 Vermoeidheid</div>
+          <div class="klacht-pill" data-klacht="Rugpijn" data-icon="🔙">🔙 Rugpijn</div>
+          <div class="klacht-pill" data-klacht="Misselijkheid" data-icon="🤮">🤮 Misselijkheid</div>
+          <div class="klacht-pill" data-klacht="Maagklachten" data-icon="😖">😖 Maagklachten</div>
+          <div class="klacht-pill" data-klacht="Spierpijn" data-icon="💪">💪 Spierpijn</div>
+          <div class="klacht-pill" data-klacht="Duizeligheid" data-icon="😵">😵 Duizeligheid</div>
+          <div class="klacht-pill" data-klacht="Kortademig" data-icon="😮‍💨">😮‍💨 Kortademig</div>
+          <div class="klacht-pill" data-klacht="Hartkloppingen" data-icon="💓">💓 Hartkloppingen</div>
+          <div class="klacht-pill" data-klacht="Gewrichtspijn" data-icon="🦴">🦴 Gewrichtspijn</div>
+          <div class="klacht-pill" data-klacht="Andere" data-icon="🩹">🩹 Andere</div>
+        </div>
+
+        <!-- Ernst -->
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px">Ernst</div>
+        <div id="ernst-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <div class="ernst-pill" data-ernst="1" title="Nauwelijks merkbaar">😌 Licht</div>
+          <div class="ernst-pill" data-ernst="2" title="Storend maar draaglijk">😐 Matig</div>
+          <div class="ernst-pill" data-ernst="3" title="Moeilijk te negeren">😣 Flink</div>
+          <div class="ernst-pill" data-ernst="4" title="Zeer ernstig">😫 Ernstig</div>
+        </div>
+
+        <!-- Datum + tijd + notitie -->
+        <div class="input-row" style="margin-bottom:12px">
+          <div class="input-group">
+            <label>Datum</label>
+            <input type="date" id="klacht-datum">
+          </div>
+          <div class="input-group">
+            <label>Begintijd</label>
+            <input type="time" id="klacht-tijd">
+          </div>
+        </div>
+        <div class="input-group" style="margin-bottom:14px">
+          <label>Notitie (optioneel)</label>
+          <input type="text" id="klacht-notitie" placeholder="bijv. na het eten, bij inspanning...">
+        </div>
+        <button class="btn" onclick="addKlacht()" style="width:100%;padding:11px">＋ Klacht opslaan</button>
+      </div>
+    </div>
+
+    <!-- Log + statistieken -->
+    <div class="grid-2 gap-section">
+      <div class="card">
+        <div class="card-head-row">
+          <div class="card-label">Recente klachten</div>
+          <button onclick="clearKlachten()" class="btn secondary" style="padding:4px 12px;font-size:.72rem">Wis alles</button>
+        </div>
+        <div id="klachten-log" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;max-height:500px;overflow-y:auto"></div>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">Meest voorkomend</div>
+        <div id="klachten-stats" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== PRESTATIES ===== -->
   <div class="view" id="view-prestaties">
     <div class="page-header">
@@ -1632,82 +1708,6 @@ html.dark .mob-sheet{background:var(--card-bg);}
         <div class="card-label" style="margin-bottom:10px">Ruwe data exporteren</div>
         <p style="font-size:.83rem;color:var(--text-soft);line-height:1.6;margin-bottom:14px">Download al je data als CSV voor Excel of Google Sheets.</p>
         <button class="btn sage" onclick="exportCSV()" style="width:100%">⬇ Download alle data als CSV</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== KLACHTEN ===== -->
-  <div class="view" id="view-klachten">
-    <div class="page-header">
-      <div><div class="page-title">🩺 <em>Klachten</em></div><div class="page-subtitle">Lichamelijke klachten bijhouden en patronen ontdekken</div></div>
-      <div style="display:flex;gap:10px;align-items:center">
-        <button onclick="exportKlachtenPDF()" class="btn secondary" style="padding:8px 16px;font-size:.82rem">📄 Export voor arts</button>
-        <div class="badge badge-neutral" id="klachten-count-badge" style="font-size:.85rem;padding:8px 16px">0 gelogd</div>
-      </div>
-    </div>
-
-    <!-- Invoer kaart -->
-    <div class="gap-section">
-      <div class="card">
-        <div class="card-label" style="margin-bottom:14px">Klacht toevoegen</div>
-
-        <!-- Klacht categorie knoppen -->
-        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px">Soort klacht</div>
-        <div id="klacht-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-          <div class="klacht-pill" data-klacht="Buikpijn" data-icon="🤢">🤢 Buikpijn</div>
-          <div class="klacht-pill" data-klacht="Hoofdpijn" data-icon="🤕">🤕 Hoofdpijn</div>
-          <div class="klacht-pill" data-klacht="Vermoeidheid" data-icon="😩">😩 Vermoeidheid</div>
-          <div class="klacht-pill" data-klacht="Rugpijn" data-icon="🔙">🔙 Rugpijn</div>
-          <div class="klacht-pill" data-klacht="Misselijkheid" data-icon="🤮">🤮 Misselijkheid</div>
-          <div class="klacht-pill" data-klacht="Maagklachten" data-icon="😖">😖 Maagklachten</div>
-          <div class="klacht-pill" data-klacht="Spierpijn" data-icon="💪">💪 Spierpijn</div>
-          <div class="klacht-pill" data-klacht="Duizeligheid" data-icon="😵">😵 Duizeligheid</div>
-          <div class="klacht-pill" data-klacht="Kortademig" data-icon="😮‍💨">😮‍💨 Kortademig</div>
-          <div class="klacht-pill" data-klacht="Hartkloppingen" data-icon="💓">💓 Hartkloppingen</div>
-          <div class="klacht-pill" data-klacht="Gewrichtspijn" data-icon="🦴">🦴 Gewrichtspijn</div>
-          <div class="klacht-pill" data-klacht="Andere" data-icon="🩹">🩹 Andere</div>
-        </div>
-
-        <!-- Ernst -->
-        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px">Ernst</div>
-        <div id="ernst-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-          <div class="ernst-pill" data-ernst="1" title="Nauwelijks merkbaar">😌 Licht</div>
-          <div class="ernst-pill" data-ernst="2" title="Storend maar draaglijk">😐 Matig</div>
-          <div class="ernst-pill" data-ernst="3" title="Moeilijk te negeren">😣 Flink</div>
-          <div class="ernst-pill" data-ernst="4" title="Zeer ernstig">😫 Ernstig</div>
-        </div>
-
-        <!-- Datum + tijd + notitie -->
-        <div class="input-row" style="margin-bottom:12px">
-          <div class="input-group">
-            <label>Datum</label>
-            <input type="date" id="klacht-datum">
-          </div>
-          <div class="input-group">
-            <label>Begintijd</label>
-            <input type="time" id="klacht-tijd">
-          </div>
-        </div>
-        <div class="input-group" style="margin-bottom:14px">
-          <label>Notitie (optioneel)</label>
-          <input type="text" id="klacht-notitie" placeholder="bijv. na het eten, bij inspanning...">
-        </div>
-        <button class="btn" onclick="addKlacht()" style="width:100%;padding:11px">＋ Klacht opslaan</button>
-      </div>
-    </div>
-
-    <!-- Log + statistieken -->
-    <div class="grid-2 gap-section">
-      <div class="card">
-        <div class="card-head-row">
-          <div class="card-label">Recente klachten</div>
-          <button onclick="clearKlachten()" class="btn secondary" style="padding:4px 12px;font-size:.72rem">Wis alles</button>
-        </div>
-        <div id="klachten-log" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;max-height:500px;overflow-y:auto"></div>
-      </div>
-      <div class="card">
-        <div class="card-label" style="margin-bottom:14px">Meest voorkomend</div>
-        <div id="klachten-stats" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
     </div>
   </div>
@@ -2037,7 +2037,7 @@ function thisWeekDays(){
 
 // ===== NAV =====
 function switchTab(tab){
-  const tabs=['dashboard','gewicht','sport','water','slaap','prestaties','uitdagingen','rapport','klachten','instellingen'];
+  const tabs=['dashboard','gewicht','sport','water','slaap','klachten','prestaties','uitdagingen','rapport','instellingen'];
   document.querySelectorAll('.nav-item').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const view=document.getElementById('view-'+tab);
