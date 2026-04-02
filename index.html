@@ -902,6 +902,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
   </div>
   <div class="sidebar-footer">
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
+    <div id="last-sync-time" style="font-size:.62rem;color:rgba(255,255,255,.28);padding:0 14px 4px;min-height:14px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
     <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v2.0.0</div>
   </div>
@@ -929,6 +930,9 @@ html.dark .mob-sheet{background:var(--card-bg);}
 
     <!-- Check-in kaart -->
     <div id="checkin-banner" class="gap-section" style="display:none"></div>
+
+    <!-- Inactief alarm -->
+    <div id="inactief-banner" class="gap-section" style="display:none"></div>
 
     <!-- Row 1: stat cards compact -->
     <div class="gap-section" id="dash-stat-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
@@ -2587,7 +2591,7 @@ function fabSaveGewicht(){
   save(KEYS.gewicht,data);
   document.getElementById('fab-gew-val').value='';
   document.getElementById('fab-gew-note').value='';
-  closeFabSheet();flashStat('stat-gewicht');renderDashboard();
+  closeFabSheet();haptic(50);flashStat('stat-gewicht');renderDashboard();
   showToast('⚖️ '+val+' kg opgeslagen');checkNewBadges();triggerAutoSync();
 }
 
@@ -2599,7 +2603,7 @@ function fabSaveSport(){
   data.sort((a,b)=>a.datum.localeCompare(b.datum));
   save(KEYS.sport,data);
   document.getElementById('fab-sport-duur').value='';
-  closeFabSheet();flashStat('stat-sport');renderDashboard();
+  closeFabSheet();haptic(50);flashStat('stat-sport');renderDashboard();
   showToast('🏃 '+fabSportSelected+' '+duur+' min opgeslagen');checkNewBadges();triggerAutoSync();
 }
 
@@ -2607,7 +2611,7 @@ function fabSaveWater(){
   const goal=parseInt(loadSettings().waterdoel)||8;
   const cur=getWaterToday();
   if(cur<goal) setWaterToday(cur+1);
-  closeFabSheet();renderDashboard();
+  closeFabSheet();haptic(30);renderDashboard();
   showToast('💧 Glas water toegevoegd!');triggerAutoSync();
 }
 
@@ -2620,7 +2624,7 @@ function fabSaveSlaap(){
   data.sort((a,b)=>a.datum.localeCompare(b.datum));
   save(KEYS.slaap,data);
   document.getElementById('fab-slaap-uren').value='';
-  closeFabSheet();flashStat('stat-slaap');renderDashboard();
+  closeFabSheet();haptic(50);flashStat('stat-slaap');renderDashboard();
   showToast('😴 '+uren+'u slaap opgeslagen');triggerAutoSync();
 }
 
@@ -2641,6 +2645,13 @@ let lastSyncTime=null;
 function triggerAutoSync(){
   clearTimeout(autoSyncTimer);
   autoSyncTimer=setTimeout(doAutoSync,800); // Was 2500ms — nu 800ms
+}
+
+function updateLastSyncTime(date){
+  const el=document.getElementById('last-sync-time');
+  if(!el) return;
+  const tijdStr=date.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+  el.textContent='Gesynchroniseerd '+tijdStr;
 }
 
 async function doAutoSync(){
@@ -2665,9 +2676,9 @@ async function doAutoSync(){
     });
     if(res.ok){
       lastSyncTime=new Date();
-      const tijdStr=lastSyncTime.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
-      setInd('☁ Opgeslagen '+tijdStr);
-      setTimeout(()=>setInd(''),5000);
+      updateLastSyncTime(lastSyncTime);
+      setInd('☁ Opgeslagen ✓');
+      setTimeout(()=>setInd(''),3000);
     } else {
       setInd('☁ Fout: '+res.status);
       setTimeout(()=>setInd(''),6000);
@@ -2724,6 +2735,7 @@ async function autoInitSync(){
     else if(activeTab==='instellingen') renderSettings();
 
     setInd('☁ Gesynchroniseerd ✓');
+    updateLastSyncTime(new Date());
     setTimeout(()=>setInd(''),3000);
 
   }catch(e){
@@ -2950,6 +2962,42 @@ function restoreDashOrder(){
   }catch(e){}
 }
 
+// ===== HAPTIC FEEDBACK (#3) =====
+function haptic(patroon){
+  if(navigator.vibrate) navigator.vibrate(patroon||50);
+}
+
+// ===== INACTIEF ALARM (#1) =====
+function renderInactiefAlarm(){
+  const banner=document.getElementById('inactief-banner');
+  if(!banner) return;
+  const gData=load(KEYS.gewicht);
+  const sData=load(KEYS.sport);
+  const slData=load(KEYS.slaap);
+  const today=new Date();
+  function dagenGeleden(ds){if(!ds)return 999;return Math.floor((today-new Date(ds))/(864e5));}
+  const laG=gData.length>0?gData[gData.length-1].datum:null;
+  const laS=sData.length>0?sData[sData.length-1].datum:null;
+  const laSl=slData.length>0?slData[slData.length-1].datum:null;
+  const meldingen=[];
+  if(gData.length>0&&dagenGeleden(laG)>=3)
+    meldingen.push({icon:'⚖️',tekst:`${dagenGeleden(laG)} dagen geen gewicht gelogd`,tab:'gewicht'});
+  if(sData.length>0&&dagenGeleden(laS)>=5)
+    meldingen.push({icon:'🏃',tekst:`${dagenGeleden(laS)} dagen geen training geregistreerd`,tab:'sport'});
+  if(slData.length>0&&dagenGeleden(laSl)>=2)
+    meldingen.push({icon:'😴',tekst:`${dagenGeleden(laSl)} dagen geen slaap gelogd`,tab:'slaap'});
+  if(!meldingen.length){banner.style.display='none';return;}
+  banner.style.display='block';
+  banner.innerHTML=`<div style="background:var(--sky-pale);border:1.5px solid var(--sky);border-radius:var(--radius);padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:.75rem;font-weight:700;color:var(--sky);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Even bijhouden 📋</div>
+    ${meldingen.map(m=>`<div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:1.1rem">${m.icon}</span>
+      <span style="flex:1;font-size:.82rem;color:var(--text-soft)">${m.tekst}</span>
+      <button onclick="switchTab('${m.tab}')" style="background:var(--sky);color:#fff;border:none;border-radius:999px;padding:4px 12px;font-size:.72rem;cursor:pointer;white-space:nowrap">Invullen →</button>
+    </div>`).join('')}
+  </div>`;
+}
+
 // ===== DAGELIJKSE CHECK-IN (#1) =====
 function loadCheckin(){
   try{return JSON.parse(localStorage.getItem('tracker_checkin'))||{streak:0,best:0,last:''};}
@@ -2966,6 +3014,7 @@ function doCheckin(){
   const newBest=Math.max(data.best,newStreak);
   const updated={streak:newStreak,best:newBest,last:todayStr()};
   saveCheckin(updated);
+  haptic([50,30,80]);
   // XP beloning
   showXPFloat(5,'checkin-banner');
   checkLevelUp();
@@ -4306,6 +4355,7 @@ function renderDashboard(){
   document.getElementById('streak-water').textContent=calcWaterStreak();
   document.getElementById('streak-sport').textContent=calcSportStreak();
   renderCheckin();
+  renderInactiefAlarm();
   renderBMI(latest);
   renderVoortgang();
   renderMijlpalen();
