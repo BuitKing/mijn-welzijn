@@ -735,14 +735,6 @@ textarea { resize:vertical; min-height:70px; }
 }
 @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
 
-/* ===== DRAG & DROP DASHBOARD (#16) ===== */
-.dash-draggable{cursor:grab;position:relative;}
-.dash-draggable:active{cursor:grabbing;}
-.dash-drag-handle{position:absolute;top:8px;right:8px;opacity:0;transition:opacity .2s;font-size:.9rem;color:var(--text-muted);z-index:2;cursor:grab;padding:4px;}
-.dash-draggable:hover .dash-drag-handle{opacity:.5;}
-.dash-drag-over{outline:2px dashed var(--gold);outline-offset:3px;border-radius:var(--radius);}
-.dash-dragging{opacity:.4;}
-
 /* ===== TOGGLE SWITCH ===== */
 .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border-light); gap:16px; }
 .toggle-row:last-child { border-bottom:none; }
@@ -878,9 +870,47 @@ html.dark .mob-sheet{background:var(--card-bg);}
   .heatmap-outer{overflow-x:auto;}
   input,select{font-size:16px!important;}
 }
+
+/* ===== PINCODE (#44) ===== */
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:background .15s;}
+.pin-dot.gevuld{background:var(--burgundy);border-color:var(--burgundy);}
+.pin-dot.fout{background:var(--rose);border-color:var(--rose);animation:pinSchud .3s ease;}
+@keyframes pinSchud{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+.pin-btn{width:72px;height:72px;border-radius:50%;border:1.5px solid var(--border);background:var(--cream2);font-family:var(--font-head);font-size:1.6rem;color:var(--text);cursor:pointer;transition:background .12s;}
+.pin-btn:hover{background:var(--parchment);}
+.pin-btn:active{background:var(--gold-pale);transform:scale(.95);}
+.pin-del{font-size:1.2rem;background:transparent;border-color:transparent;color:var(--text-muted);}
 </style>
 </head>
 <body>
+<!-- ===== PINCODE SCHERM ===== -->
+<div id="pin-overlay" style="position:fixed;inset:0;background:var(--cream);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0">
+  <div style="text-align:center;margin-bottom:32px">
+    <div style="font-family:var(--font-head);font-size:2rem;color:var(--burgundy)">Mijn <em>Welzijn</em></div>
+    <div style="font-size:.85rem;color:var(--text-muted);margin-top:6px">Voer je pincode in</div>
+  </div>
+  <div id="pin-dots" style="display:flex;gap:14px;margin-bottom:28px">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div id="pin-fout" style="font-size:.8rem;color:var(--rose);min-height:18px;margin-bottom:16px;text-align:center"></div>
+  <div style="display:grid;grid-template-columns:repeat(3,72px);gap:12px">
+    <button class="pin-btn" onclick="pinInvoer('1')">1</button>
+    <button class="pin-btn" onclick="pinInvoer('2')">2</button>
+    <button class="pin-btn" onclick="pinInvoer('3')">3</button>
+    <button class="pin-btn" onclick="pinInvoer('4')">4</button>
+    <button class="pin-btn" onclick="pinInvoer('5')">5</button>
+    <button class="pin-btn" onclick="pinInvoer('6')">6</button>
+    <button class="pin-btn" onclick="pinInvoer('7')">7</button>
+    <button class="pin-btn" onclick="pinInvoer('8')">8</button>
+    <button class="pin-btn" onclick="pinInvoer('9')">9</button>
+    <div></div>
+    <button class="pin-btn" onclick="pinInvoer('0')">0</button>
+    <button class="pin-btn pin-del" onclick="pinVerwijder()">⌫</button>
+  </div>
+</div>
 <div class="app">
 
 <!-- ===== SIDEBAR ===== -->
@@ -940,7 +970,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div id="last-sync-time" style="font-size:.62rem;color:rgba(255,255,255,.28);padding:0 14px 4px;min-height:14px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.8.1 ↑</div>
+    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.9.0 ↑</div>
   </div>
 </aside>
 
@@ -2041,6 +2071,66 @@ html.dark .mob-sheet{background:var(--card-bg);}
 </div>
 
 <script>
+// ===== PINCODE =====
+const PIN_STORAGE_KEY='mw_auth_v1';
+const PIN_HASH=-2121033008; // hash van '1954' + salt
+
+function pinHash(str){
+  let h=0;
+  for(const c of str+'mijnwelzijn_v1'){h=((h<<5)-h)+c.charCodeAt(0);h|=0;}
+  return h;
+}
+
+let pinBuffer='';
+
+function pinInvoer(cijfer){
+  if(pinBuffer.length>=4) return;
+  pinBuffer+=cijfer;
+  updatePinDots();
+  if(pinBuffer.length===4) setTimeout(controleerPin,120);
+}
+
+function pinVerwijder(){
+  pinBuffer=pinBuffer.slice(0,-1);
+  updatePinDots();
+  document.getElementById('pin-fout').textContent='';
+}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('pd'+i);
+    if(d){d.classList.toggle('gevuld',i<pinBuffer.length);d.classList.remove('fout');}
+  }
+}
+
+function controleerPin(){
+  if(pinHash(pinBuffer)===PIN_HASH){
+    localStorage.setItem(PIN_STORAGE_KEY,'1');
+    const overlay=document.getElementById('pin-overlay');
+    if(overlay){overlay.style.transition='opacity .3s';overlay.style.opacity='0';setTimeout(()=>overlay.remove(),300);}
+  } else {
+    // Fout — schud animatie
+    for(let i=0;i<4;i++){const d=document.getElementById('pd'+i);if(d)d.classList.add('fout');}
+    document.getElementById('pin-fout').textContent='Onjuiste pincode, probeer opnieuw';
+    setTimeout(()=>{
+      pinBuffer='';updatePinDots();
+      document.getElementById('pin-fout').textContent='';
+    },800);
+  }
+}
+
+function checkPin(){
+  const overlay=document.getElementById('pin-overlay');
+  if(!overlay) return;
+  if(localStorage.getItem(PIN_STORAGE_KEY)==='1'){
+    overlay.remove(); // Al ingelogd op dit apparaat
+  }
+  // Anders blijft overlay zichtbaar
+}
+
+// Direct aanroepen
+checkPin();
+
 // ===== DATA =====
 const KEYS={gewicht:'tracker_gewicht',sport:'tracker_sport',water:'tracker_water',slaap:'tracker_slaap',settings:'tracker_settings'};
 function load(k){try{return JSON.parse(localStorage.getItem(k))||[];}catch{return[];}}
@@ -3892,6 +3982,9 @@ function restoreDashOrder(){
 
 // ===== PATCHNOTES =====
 const PATCHNOTES=[
+  {versie:'v2.9.0',datum:'2 april 2026',items:[
+    'Pincode beveiliging — pincode invoeren bij eerste gebruik, daarna onthouden op apparaat',
+  ]},
   {versie:'v2.8.0',datum:'2 april 2026',items:[
     'Dashboard drag & drop — sleep secties naar eigen volgorde, wordt onthouden',
     'Water herinnering — notificatie elke 2 uur als app open is, aan/uit in Instellingen',
@@ -4593,72 +4686,6 @@ function initWaterReminder(){
   if(aan&&Notification.permission==='granted') startWaterReminder();
   const st=document.getElementById('water-reminder-status');
   if(st&&aan) st.textContent='✓ Actief — je krijgt elke 2 uur een herinnering als je open hebt';
-}
-
-// ===== DRAG & DROP DASHBOARD (#16) =====
-const DASH_VOLGORDE_KEY='tracker_dash_volgorde';
-const DASH_SECTIES=['dash-row2','dash-row3','dash-water-card','dash-mijlpalen'];
-let dragSrc=null;
-
-function initDragDrop(){
-  const rows=document.querySelectorAll('#view-dashboard .gap-section[id], #view-dashboard > .gap-section');
-  rows.forEach(el=>{
-    if(el.id==='meldingen-rij'||el.id==='dash-stat-row') return;
-    el.classList.add('dash-draggable');
-    // Voeg sleepgreep toe
-    if(!el.querySelector('.dash-drag-handle')){
-      const h=document.createElement('div');
-      h.className='dash-drag-handle';h.title='Versleep sectie';h.textContent='⠿';
-      el.style.position='relative';
-      el.appendChild(h);
-    }
-    el.setAttribute('draggable','true');
-    el.addEventListener('dragstart',e=>{
-      dragSrc=el;el.classList.add('dash-dragging');
-      e.dataTransfer.effectAllowed='move';
-    });
-    el.addEventListener('dragend',()=>{
-      el.classList.remove('dash-dragging');
-      document.querySelectorAll('.dash-drag-over').forEach(x=>x.classList.remove('dash-drag-over'));
-      slaanDashVolgorde();
-    });
-    el.addEventListener('dragover',e=>{
-      e.preventDefault();e.dataTransfer.dropEffect='move';
-      if(dragSrc&&dragSrc!==el) el.classList.add('dash-drag-over');
-    });
-    el.addEventListener('dragleave',()=>el.classList.remove('dash-drag-over'));
-    el.addEventListener('drop',e=>{
-      e.preventDefault();el.classList.remove('dash-drag-over');
-      if(!dragSrc||dragSrc===el) return;
-      const parent=el.parentNode;
-      const nodes=[...parent.children];
-      const srcIdx=nodes.indexOf(dragSrc);
-      const tgtIdx=nodes.indexOf(el);
-      if(srcIdx<tgtIdx) parent.insertBefore(dragSrc,el.nextSibling);
-      else parent.insertBefore(dragSrc,el);
-    });
-  });
-}
-
-function slaanDashVolgorde(){
-  const parent=document.getElementById('view-dashboard');
-  if(!parent) return;
-  const ids=[...parent.querySelectorAll('.gap-section[id]')].map(el=>el.id);
-  localStorage.setItem(DASH_VOLGORDE_KEY,JSON.stringify(ids));
-}
-
-function herstellenDashVolgorde(){
-  const saved=localStorage.getItem(DASH_VOLGORDE_KEY);
-  if(!saved) return;
-  try{
-    const ids=JSON.parse(saved);
-    const parent=document.getElementById('view-dashboard');
-    if(!parent) return;
-    ids.forEach(id=>{
-      const el=document.getElementById(id);
-      if(el&&el.parentNode===parent) parent.appendChild(el);
-    });
-  }catch{}
 }
 
 // ===== SAVE POP =====
@@ -5848,7 +5875,6 @@ function renderDashboard(){
   updateQuickWaterCount();
   renderDashSlaapChart();
   renderQuote();
-  setTimeout(initDragDrop,100);
 }
 
 // ===== VISIBILITY TOGGLES =====
@@ -5945,8 +5971,6 @@ async function init(){
   applyCompact();
   setupPWA();
   initWaterReminder();
-  herstellenDashVolgorde();
-  setTimeout(initDragDrop, 500);
 
   // Push altijd naar Firebase als de pagina gesloten wordt
   window.addEventListener('beforeunload',()=>{
