@@ -918,9 +918,12 @@ html.dark .mob-sheet{background:var(--card-bg);}
         <div class="page-subtitle" id="welcome-sub">Hier is je overzicht van vandaag.</div>
         <div id="dash-motivatie" style="display:none;margin-top:4px;font-size:.82rem;font-style:italic;color:var(--gold)"></div>
       </div>
-      <div class="quote-banner" id="quote-banner">
-        <span class="quote-icon" id="quote-icon">🌸</span>
-        <span class="quote-text" id="quote-text">Kleine stappen tellen.</span>
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <button onclick="doAutoSync()" title="Nu synchroniseren" style="background:none;border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:.75rem;color:var(--text-muted);cursor:pointer;white-space:nowrap" id="sync-now-btn">☁ Sync</button>
+        <div class="quote-banner" id="quote-banner">
+          <span class="quote-icon" id="quote-icon">🌸</span>
+          <span class="quote-text" id="quote-text">Kleine stappen tellen.</span>
+        </div>
       </div>
     </div>
 
@@ -2633,24 +2636,46 @@ function initFabSportPills(){
 
 // ===== AUTO-SYNC (#17) =====
 let autoSyncTimer=null;
+let lastSyncTime=null;
+
 function triggerAutoSync(){
   clearTimeout(autoSyncTimer);
-  autoSyncTimer=setTimeout(doAutoSync,2500);
+  autoSyncTimer=setTimeout(doAutoSync,800); // Was 2500ms — nu 800ms
 }
+
 async function doAutoSync(){
   const{url,user}=getFirebaseConfig();
   if(!url||!user) return;
   const ind=document.getElementById('autosync-indicator');
-  if(ind) ind.textContent='☁ Synchroniseren...';
+  const setInd=(txt)=>{if(ind) ind.textContent=txt;};
+  setInd('☁ Opslaan...');
   try{
-    const res=await fetch(`${url}/welzijn/${user}.json`,{method:'PUT',
+    const payload={
+      gewicht:load(KEYS.gewicht),
+      sport:load(KEYS.sport),
+      water:load(KEYS.water),
+      slaap:load(KEYS.slaap),
+      meetmomenten:loadMM(),
+      settings:loadSettings()
+    };
+    const res=await fetch(`${url}/welzijn/${user}.json`,{
+      method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({gewicht:load(KEYS.gewicht),sport:load(KEYS.sport),
-        water:load(KEYS.water),slaap:load(KEYS.slaap),meetmomenten:loadMM(),settings:loadSettings()})});
+      body:JSON.stringify(payload)
+    });
     if(res.ok){
-      if(ind){ind.textContent='☁ Gesynchroniseerd ✓';setTimeout(()=>{if(ind)ind.textContent='';},3000);}
+      lastSyncTime=new Date();
+      const tijdStr=lastSyncTime.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+      setInd('☁ Opgeslagen '+tijdStr);
+      setTimeout(()=>setInd(''),5000);
+    } else {
+      setInd('☁ Fout: '+res.status);
+      setTimeout(()=>setInd(''),6000);
     }
-  }catch(e){if(ind){ind.textContent='☁ Sync mislukt';setTimeout(()=>{if(ind)ind.textContent='';},4000);}}
+  }catch(e){
+    setInd('☁ Geen verbinding');
+    setTimeout(()=>setInd(''),6000);
+  }
 }
 async function autoInitSync(){
   const{url,user}=getFirebaseConfig();
@@ -4469,6 +4494,20 @@ async function init(){
   applyDarkMode();
   applyCompact();
   setupPWA();
+
+  // Push altijd naar Firebase als de pagina gesloten wordt
+  window.addEventListener('beforeunload',()=>{
+    const{url,user}=getFirebaseConfig();
+    if(!url||!user) return;
+    const payload=JSON.stringify({
+      gewicht:load(KEYS.gewicht),sport:load(KEYS.sport),
+      water:load(KEYS.water),slaap:load(KEYS.slaap),
+      meetmomenten:loadMM(),settings:loadSettings()
+    });
+    // sendBeacon is betrouwbaarder bij sluiten browser
+    navigator.sendBeacon(`${url}/welzijn/${user}.json?method=PUT`,
+      new Blob([payload],{type:'application/json'}));
+  });
   setTimeout(initDashDragDrop, 500);
 
   // Laad-overlay tonen
@@ -4479,7 +4518,7 @@ async function init(){
   try{
     await Promise.race([
       autoInitSync(),
-      new Promise(r=>setTimeout(r,4000))
+      new Promise(r=>setTimeout(r,8000))
     ]);
   }catch(e){console.warn('Firebase init failed:',e);}
 
