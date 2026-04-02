@@ -932,7 +932,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div id="last-sync-time" style="font-size:.62rem;color:rgba(255,255,255,.28);padding:0 14px 4px;min-height:14px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.6.0 ↑</div>
+    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.7.0 ↑</div>
   </div>
 </aside>
 
@@ -945,7 +945,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
       <div>
         <div class="page-title">Goedemorgen, <em id="welcome-greeting">vandaag</em> 👋</div>
         <div class="page-subtitle" id="welcome-sub">Hier is je overzicht van vandaag.</div>
-        <div id="dash-motivatie" style="display:none;margin-top:4px;font-size:.82rem;font-style:italic;color:var(--gold)"></div>
+        <div id="dash-motivatie" style="margin-top:4px;font-size:.82rem;font-style:italic;color:var(--gold)"></div>
       </div>
       <div style="display:flex;align-items:flex-start;gap:10px">
         <button onclick="doAutoSync()" title="Nu synchroniseren" style="background:none;border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:.75rem;color:var(--text-muted);cursor:pointer;white-space:nowrap" id="sync-now-btn">☁ Sync</button>
@@ -1450,16 +1450,24 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <!-- Row 2: grafiek + log -->
     <div class="grid-2 gap-section">
       <div class="card">
-        <div class="card-label" style="margin-bottom:14px">Slaap afgelopen 14 nachten</div>
+        <div class="card-head-row" style="margin-bottom:14px">
+          <div class="card-label">Slaap afgelopen 14 nachten</div>
+          <div id="slaapschuld-badge" style="display:none"></div>
+        </div>
         <div class="chart-wrap tall"><canvas id="slaapChart"></canvas></div>
         <div style="display:flex;gap:14px;margin-top:12px;font-size:.72rem;color:var(--text-muted);font-weight:600">
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:#c47a7a;display:inline-block"></span> &lt; 6u slecht</span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:#c8954a;display:inline-block"></span> 6–8u gewoon</span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:#7a9e7e;display:inline-block"></span> &gt; 8u goed</span>
         </div>
+        <!-- Slaapschuld box (#19) -->
+        <div id="slaapschuld-box" style="margin-top:14px;display:none"></div>
       </div>
       <div class="card">
-        <div class="card-label" style="margin-bottom:14px">Geschiedenis</div>
+        <div class="card-head-row" style="margin-bottom:14px">
+          <div class="card-label">Geschiedenis</div>
+          <button onclick="openReflectie()" class="btn secondary" style="padding:4px 12px;font-size:.74rem">📝 Weekreflectie</button>
+        </div>
         <div class="log-list" id="slaap-log" style="max-height:480px;overflow-y:auto"></div>
       </div>
     </div>
@@ -2603,8 +2611,36 @@ function renderGewicht(){
     const ctx=document.getElementById('gewichtChartFull').getContext('2d');
     const grad=ctx.createLinearGradient(0,0,0,260);grad.addColorStop(0,'rgba(200,149,74,0.18)');grad.addColorStop(1,'rgba(200,149,74,0)');
     const cfg=chartDefaults();
+    const s=loadSettings();
+    const lengte=parseFloat(s.lengte)||180;
+    const bmiMin=18.5*(lengte/100)*(lengte/100);
+    const bmiMax=25*(lengte/100)*(lengte/100);
+    const yMin=Math.min(...data.map(x=>x.val))-3;
+    const yMax=Math.max(...data.map(x=>x.val))+3;
+
+    // BMI zone plugin
+    const bmiPlugin={id:'bmiZone',beforeDatasetsDraw(chart){
+      const{ctx:c,chartArea:{left,right,top,bottom},scales:{y}}=chart;
+      const lo=Math.max(bmiMin,y.min),hi=Math.min(bmiMax,y.max);
+      if(lo>=hi) return;
+      const yLo=y.getPixelForValue(hi);
+      const yHi=y.getPixelForValue(lo);
+      c.save();c.fillStyle='rgba(122,158,126,0.12)';
+      c.fillRect(left,yLo,right-left,yHi-yLo);
+      c.strokeStyle='rgba(122,158,126,0.4)';c.lineWidth=1;c.setLineDash([4,3]);
+      c.beginPath();c.moveTo(left,yLo);c.lineTo(right,yLo);c.stroke();
+      c.beginPath();c.moveTo(left,yHi);c.lineTo(right,yHi);c.stroke();
+      c.setLineDash([]);
+      c.font='500 10px Nunito,sans-serif';c.fillStyle='rgba(122,158,126,0.7)';
+      c.textAlign='right';
+      if(yLo>top+14) c.fillText('BMI 25',right-4,yLo-4);
+      if(yHi<bottom-6) c.fillText('BMI 18.5',right-4,yHi+12);
+      c.restore();
+    }};
+
     charts['gewichtChartFull']=new Chart(ctx,{type:'line',data:{labels:data.map(x=>fmtDate(x.datum)),datasets:[{data:data.map(x=>x.val),borderColor:'#c8954a',backgroundColor:grad,borderWidth:2.5,pointBackgroundColor:'#c8954a',pointRadius:5,pointBorderColor:'#fff',pointBorderWidth:2,tension:0.4,fill:true}]},
-      options:{...cfg,scales:{...cfg.scales,y:{...cfg.scales.y,suggestedMin:Math.min(...data.map(x=>x.val))-3,suggestedMax:Math.max(...data.map(x=>x.val))+3}}}});
+      options:{...cfg,scales:{...cfg.scales,y:{...cfg.scales.y,suggestedMin:yMin,suggestedMax:yMax}}},
+      plugins:[bmiPlugin]});
   }
   renderMeetmomentTijdlijn();
 }
@@ -3834,6 +3870,12 @@ function restoreDashOrder(){
 
 // ===== PATCHNOTES =====
 const PATCHNOTES=[
+  {versie:'v2.7.0',datum:'2 april 2026',items:[
+    'AI motivatie quote — dagelijkse persoonlijke quote op dashboard via Claude',
+    'BMI zone op gewichtsgrafiek — groene band tussen BMI 18.5 en 25',
+    'Slaapschuld box in slaaptab — rood als je tekort komt, groen als je boven doel zit',
+    'Weekreflectie — 3 vragen via knop in slaaptab, incl. geschiedenis vorige reflecties',
+  ]},
   {versie:'v2.6.0',datum:'2 april 2026',items:[
     'Statistieken tab vervangen door Rapport tab',
     'Rapport genereren verplaatst van Instellingen naar Rapport tab',
@@ -4014,6 +4056,7 @@ function doCheckin(){
   triggerAutoSync();
   window._checkinHtml='';window._inactiefHtml='';
   renderInactiefAlarm();renderCheckin();
+  renderAIMotivatie();
   showToast('🔥 Ingecheckt! Streak: '+newStreak+' dagen — +5 XP');
 }
 
@@ -4299,6 +4342,164 @@ function toonChallengeHistory(){
   document.body.appendChild(overlay);
 }
 
+// ===== AI MOTIVATIE QUOTE (#2) =====
+let lastQuoteDatum='';
+async function renderAIMotivatie(){
+  const el=document.getElementById('dash-motivatie');
+  if(!el) return;
+
+  // Max 1x per dag ophalen
+  const vandaag=todayStr();
+  const cached=localStorage.getItem('tracker_ai_quote');
+  if(cached){
+    try{
+      const obj=JSON.parse(cached);
+      if(obj.datum===vandaag){
+        el.textContent=obj.quote;
+        el.style.display='block';
+        return;
+      }
+    }catch{}
+  }
+
+  // Bouw context op basis van data
+  const gData=load(KEYS.gewicht);
+  const sData=load(KEYS.sport);
+  const slData=load(KEYS.slaap);
+  const s=loadSettings();
+  const naam=s.naam||'Joost';
+  const latest=gData.length?gData[gData.length-1].val:null;
+  const doel=s.doelgewicht;
+  const trainingen=sData.filter(x=>weekKey(x.datum)===weekKey(todayStr())).length;
+  const gemSlaap=slData.slice(-7).length?
+    (slData.slice(-7).reduce((a,x)=>a+x.uren,0)/slData.slice(-7).length).toFixed(1):null;
+
+  const ctx=`Naam: ${naam}. ${latest?`Huidig gewicht: ${latest}kg.`:''}${doel?` Doel: ${doel}kg.`:''} Trainingen deze week: ${trainingen}. ${gemSlaap?`Gem. slaap: ${gemSlaap}u.`:''}`;
+
+  try{
+    el.textContent='💭 Even nadenken...';
+    el.style.display='block';
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:120,
+        messages:[{role:'user',content:`Geef een korte (max 1 zin, max 15 woorden) persoonlijke motiverende quote voor: ${ctx}. Varieer de toon. Geen aanhalingstekens. Geen naam erin. Alleen de zin, niets anders.`}]
+      })
+    });
+    const data=await res.json();
+    const quote=data.content?.[0]?.text?.trim();
+    if(quote){
+      el.textContent='✨ '+quote;
+      el.style.display='block';
+      localStorage.setItem('tracker_ai_quote',JSON.stringify({datum:vandaag,quote:'✨ '+quote}));
+    } else {
+      el.style.display='none';
+    }
+  }catch(e){
+    el.style.display='none';
+  }
+}
+
+// ===== SLAAPSCHULD (#19) =====
+function renderSlaapschuld(){
+  const box=document.getElementById('slaapschuld-box');
+  if(!box) return;
+  const slData=load(KEYS.slaap);
+  const s=loadSettings();
+  const slaapDoel=parseFloat(s.slaapdoel)||8;
+
+  // Huidige week
+  const wk=weekKey(todayStr());
+  const dezeWeek=slData.filter(x=>weekKey(x.datum)===wk);
+  if(!dezeWeek.length){box.style.display='none';return;}
+
+  const totaalGeslapen=dezeWeek.reduce((a,x)=>a+x.uren,0);
+  const totaalDoel=dezeWeek.length*slaapDoel;
+  const schuld=Math.round((totaalDoel-totaalGeslapen)*10)/10;
+  const gemDezeWeek=(totaalGeslapen/dezeWeek.length).toFixed(1);
+
+  box.style.display='block';
+
+  if(schuld>0){
+    box.innerHTML=`<div style="background:var(--rose-pale);border:1.5px solid var(--rose-light);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:1.4rem">😴</span>
+      <div style="flex:1">
+        <div style="font-size:.82rem;font-weight:700;color:var(--rose)">Slaapschuld deze week</div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px">${dezeWeek.length} nachten gelogd · gem. ${gemDezeWeek}u · doel ${slaapDoel}u</div>
+      </div>
+      <div style="font-family:var(--font-head);font-size:1.3rem;font-weight:700;color:var(--rose)">-${schuld}u</div>
+    </div>`;
+  } else {
+    const bonus=Math.abs(schuld);
+    box.innerHTML=`<div style="background:var(--sage-pale);border:1.5px solid var(--sage-light);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:1.4rem">🌟</span>
+      <div style="flex:1">
+        <div style="font-size:.82rem;font-weight:700;color:var(--sage)">Goed geslapen deze week!</div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px">${dezeWeek.length} nachten · gem. ${gemDezeWeek}u · ${bonus.toFixed(1)}u boven doel</div>
+      </div>
+      <span style="font-size:1.4rem">✅</span>
+    </div>`;
+  }
+}
+
+// ===== WEKELIJKSE REFLECTIE (#21) =====
+const REFLECTIE_VRAGEN=[
+  'Wat ging er deze week goed met je gezondheid?',
+  'Wat wil je volgende week anders of beter doen?',
+  'Wat maakte je trots op jezelf deze week?'
+];
+function openReflectie(){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9990;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+
+  const wk=weekKey(todayStr());
+  const opgeslagen=JSON.parse(localStorage.getItem('tracker_reflectie')||'{}')[wk]||{};
+  const nu=new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long'});
+
+  overlay.innerHTML=`<div style="background:var(--cream);border-radius:20px;padding:24px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div style="font-family:var(--font-head);font-size:1.2rem;color:var(--text)">📝 Weekreflectie</div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px">Week van ${nu}</div>
+      </div>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;font-size:1.3rem;color:var(--text-muted)">✕</button>
+    </div>
+    ${REFLECTIE_VRAGEN.map((v,i)=>`
+      <div style="margin-bottom:16px">
+        <label style="display:block;font-size:.83rem;font-weight:700;color:var(--text);margin-bottom:6px">${i+1}. ${v}</label>
+        <textarea id="refl-${i}" placeholder="Schrijf hier je antwoord..." style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-family:var(--font-body);font-size:.83rem;color:var(--text);background:var(--cream2);resize:vertical;min-height:70px;outline:none">${opgeslagen[i]||''}</textarea>
+      </div>`).join('')}
+    <button onclick="slaanReflectieOp(this)" style="width:100%;background:var(--burgundy);color:#fff;border:none;border-radius:999px;padding:12px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--font-body)">Opslaan</button>
+    ${Object.keys(JSON.parse(localStorage.getItem('tracker_reflectie')||'{}')).length>0?
+      `<div id="reflectie-history" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-light)">
+        <div style="font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Vorige reflecties</div>
+        ${Object.entries(JSON.parse(localStorage.getItem('tracker_reflectie')||'{}')).sort((a,b)=>b[0]>a[0]?1:-1).slice(0,3).map(([w,ant])=>`
+          <div style="margin-bottom:10px;padding:10px 12px;background:var(--parchment);border-radius:10px;border:1px solid var(--border-light)">
+            <div style="font-size:.72rem;font-weight:700;color:var(--text-muted);margin-bottom:5px">Week van ${w}</div>
+            ${REFLECTIE_VRAGEN.map((v,i)=>ant[i]?`<div style="font-size:.78rem;color:var(--text-soft);margin-bottom:3px"><strong>${i+1}.</strong> ${ant[i]}</div>`:'').join('')}
+          </div>`).join('')}
+      </div>`:''}
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+function slaanReflectieOp(btn){
+  const wk=weekKey(todayStr());
+  const all=JSON.parse(localStorage.getItem('tracker_reflectie')||'{}');
+  all[wk]={};
+  REFLECTIE_VRAGEN.forEach((_,i)=>{
+    const ta=document.getElementById('refl-'+i);
+    if(ta?.value.trim()) all[wk][i]=ta.value.trim();
+  });
+  localStorage.setItem('tracker_reflectie',JSON.stringify(all));
+  showToast('✅ Weekreflectie opgeslagen!');
+  haptic(50);
+  btn.closest('[style*=fixed]').remove();
+}
+
 // ===== SAVE POP =====
 function savePop(cardId){
   const el=document.getElementById(cardId);
@@ -4441,6 +4642,7 @@ function renderSlaap(){
         <div style="font-family:var(--font-head);font-size:1rem;color:var(--burgundy)">${s.val}</div>
       </div>`).join('');
   }
+  renderSlaapschuld();
 }
 
 function deleteSlaap(id){
