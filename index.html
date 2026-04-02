@@ -638,11 +638,21 @@ textarea { resize:vertical; min-height:70px; }
   100% { transform:scale(1); }
 }
 @keyframes statFlash {
-  0%   { background:var(--gold-pale); }
-  100% { background:#fff; }
+  0%   { transform:scale(1); }
+  30%  { transform:scale(1.08) translateY(-4px); box-shadow:0 8px 20px rgba(200,149,74,.25); }
+  60%  { transform:scale(0.97) translateY(0); }
+  80%  { transform:scale(1.02); }
+  100% { transform:scale(1); }
+}
+@keyframes cardPop {
+  0%   { transform:scale(1); }
+  25%  { transform:scale(1.03) translateY(-3px); }
+  60%  { transform:scale(0.98); }
+  100% { transform:scale(1); }
 }
 .save-pop { animation:savePop .45s cubic-bezier(.34,1.56,.64,1) !important; }
-.stat-flash { animation:statFlash .8s ease-out !important; }
+.stat-flash { animation:statFlash .6s cubic-bezier(.34,1.56,.64,1) !important; transform-origin:center; }
+.card-pop  { animation:cardPop .5s cubic-bezier(.34,1.56,.64,1) !important; transform-origin:center; }
 
 /* ===== SLAAP ===== */
 .slaap-stars { display:flex; gap:6px; margin:10px 0 14px; flex-wrap:wrap; }
@@ -753,6 +763,9 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <button class="nav-item" onclick="switchTab('prestaties')">
       <span class="nav-icon">🏅</span><span class="nav-label">Prestaties</span>
     </button>
+    <button class="nav-item" onclick="switchTab('uitdagingen')">
+      <span class="nav-icon">⚡</span><span class="nav-label">Uitdagingen</span>
+    </button>
     <button class="nav-item" onclick="switchTab('instellingen')">
       <span class="nav-icon">⚙️</span><span class="nav-label">Instellingen</span>
     </button>
@@ -766,7 +779,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
   <div class="sidebar-footer">
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v1.4.0</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v1.5.0</div>
   </div>
 </aside>
 
@@ -823,7 +836,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
         <div class="stat-icon">😴</div>
         <div class="stat-info">
           <div><span class="stat-val" id="dash-slaap">—</span><span class="stat-unit">uur</span></div>
-          <div class="stat-label">Slaap gisteren</div>
+          <div class="stat-label">Slaap afgelopen nacht</div>
           <div id="dash-slaap-kwaliteit" class="stat-delta badge badge-neutral" style="margin-top:5px">—</div>
         </div>
       </div>
@@ -1299,6 +1312,56 @@ html.dark .mob-sheet{background:var(--card-bg);}
     </div>
   </div>
 
+  <!-- ===== UITDAGINGEN ===== -->
+  <div class="view" id="view-uitdagingen">
+    <div class="page-header">
+      <div><div class="page-title">⚡ <em>Uitdagingen</em></div><div class="page-subtitle">Level, XP en wekelijkse uitdagingen</div></div>
+      <div class="badge badge-gold" id="xp-badge-header" style="font-size:.85rem;padding:8px 16px">0 XP</div>
+    </div>
+
+    <!-- Level & XP -->
+    <div class="gap-section">
+      <div class="card" id="level-card">
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <div id="level-circle" style="width:80px;height:80px;border-radius:50%;background:var(--gold-pale);border:3px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+            <div id="level-num" style="font-family:var(--font-head);font-size:1.8rem;font-weight:700;color:var(--gold);line-height:1">1</div>
+            <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)">LEVEL</div>
+          </div>
+          <div style="flex:1;min-width:160px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <div id="level-title" style="font-family:var(--font-head);font-size:1rem;color:var(--text)">Beginner</div>
+              <div id="xp-display" style="font-size:.82rem;color:var(--text-muted)">0 / 100 XP</div>
+            </div>
+            <div class="progress-bar" style="height:10px">
+              <div id="xp-bar" class="progress-fill" style="width:0%;background:linear-gradient(90deg,var(--gold),var(--gold-light))"></div>
+            </div>
+            <div id="level-next" style="font-size:.72rem;color:var(--text-muted);margin-top:5px"></div>
+          </div>
+        </div>
+        <div id="xp-breakdown" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border-light)"></div>
+      </div>
+    </div>
+
+    <!-- Wekelijkse uitdagingen -->
+    <div class="gap-section">
+      <div class="card">
+        <div class="card-head-row">
+          <div class="card-label">Wekelijkse uitdagingen</div>
+          <div id="challenges-week" class="badge badge-neutral" style="font-size:.75rem"></div>
+        </div>
+        <div id="challenges-list" style="display:flex;flex-direction:column;gap:12px;margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- XP log -->
+    <div class="gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">Hoe verdien je XP</div>
+        <div style="display:flex;flex-direction:column;gap:8px" id="xp-guide"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== INSTELLINGEN ===== -->
   <div class="view" id="view-instellingen">
     <div class="page-header">
@@ -1607,7 +1670,7 @@ function thisWeekDays(){
 
 // ===== NAV =====
 function switchTab(tab){
-  const tabs=['dashboard','gewicht','sport','water','slaap','prestaties','instellingen'];
+  const tabs=['dashboard','gewicht','sport','water','slaap','prestaties','uitdagingen','instellingen'];
   document.querySelectorAll('.nav-item').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const view=document.getElementById('view-'+tab);
@@ -1626,6 +1689,7 @@ function switchTab(tab){
   if(tab==='water') renderWater();
   if(tab==='slaap') renderSlaap();
   if(tab==='prestaties') renderPrestaties();
+  if(tab==='uitdagingen') renderUitdagingen();
   if(tab==='instellingen') renderSettings();
   // Mobiele nav bijwerken
   const mobTabs=['dashboard','gewicht','sport','water'];
@@ -1819,7 +1883,7 @@ function addGewicht(){
   const data=load(KEYS.gewicht);data.push({id:Date.now(),datum,val,note});
   data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.gewicht,data);
   document.getElementById('input-gewicht').value='';document.getElementById('input-gewicht-note').value='';
-  savePop('dash-gewicht-chart');flashStat('stat-gewicht');
+  savePop('dash-gewicht-chart');flashStat('stat-gewicht');popCard('dash-gewicht-chart');
   renderGewicht();renderDashboard();checkNewBadges();triggerAutoSync();
 }
 function deleteGewicht(id){save(KEYS.gewicht,load(KEYS.gewicht).filter(x=>x.id!==id));renderGewicht();renderDashboard();triggerAutoSync();}
@@ -1859,7 +1923,7 @@ function addSport(){
   const data=load(KEYS.sport);data.push({id:Date.now(),datum,sport:selectedSport,duur,note});
   data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.sport,data);
   document.getElementById('input-sport-duur').value='';document.getElementById('input-sport-note').value='';
-  savePop('dash-sport-chart');flashStat('stat-sport');
+  savePop('dash-sport-chart');flashStat('stat-sport');popCard('dash-sport-chart');
   renderSport();renderDashboard();checkNewBadges();triggerAutoSync();
 }
 function deleteSport(id){save(KEYS.sport,load(KEYS.sport).filter(x=>x.id!==id));renderSport();renderDashboard();triggerAutoSync();}
@@ -2018,7 +2082,7 @@ function quickAddGewicht(){
   const data=load(KEYS.gewicht);data.push({id:Date.now(),datum,val,note});
   data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.gewicht,data);
   document.getElementById('q-gewicht-val').value='';document.getElementById('q-gewicht-note').value='';
-  toggleQuick('__close');savePop('dash-gewicht-chart');flashStat('stat-gewicht');renderDashboard();showToast('⚖️ '+val+' kg opgeslagen ('+fmtDate(datum)+')');checkNewBadges();triggerAutoSync();
+  toggleQuick('__close');savePop('dash-gewicht-chart');flashStat('stat-gewicht');popCard('dash-gewicht-chart');renderDashboard();showToast('⚖️ '+val+' kg opgeslagen ('+fmtDate(datum)+')');checkNewBadges();triggerAutoSync();
 }
 function quickAddSport(){
   const duur=parseInt(document.getElementById('q-sport-duur').value);
@@ -2027,12 +2091,12 @@ function quickAddSport(){
   const data=load(KEYS.sport);data.push({id:Date.now(),datum:todayStr(),sport:qSelectedSport,duur,note});
   data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.sport,data);
   document.getElementById('q-sport-duur').value='';document.getElementById('q-sport-note').value='';
-  toggleQuick('__close');savePop('dash-sport-chart');flashStat('stat-sport');renderDashboard();showToast('🏃 '+qSelectedSport+' '+duur+' min opgeslagen');checkNewBadges();triggerAutoSync();
+  toggleQuick('__close');savePop('dash-sport-chart');flashStat('stat-sport');popCard('dash-sport-chart');renderDashboard();showToast('🏃 '+qSelectedSport+' '+duur+' min opgeslagen');checkNewBadges();triggerAutoSync();
 }
 function quickAddWater(){
   const goal=parseInt(loadSettings().waterdoel)||8,current=getWaterToday();
   if(current>=goal){showToast('💧 Dagdoel al bereikt! 🎉');return;}
-  setWaterToday(current+1);flashStat('stat-water');renderDashboard();showToast('💧 Glas gelogd! ('+(current+1)+'/'+goal+')');checkNewBadges();
+  setWaterToday(current+1);flashStat('stat-water');popCard('dash-water-card');renderDashboard();showToast('💧 Glas gelogd! ('+(current+1)+'/'+goal+')');checkNewBadges();
 }
 function updateQuickWaterCount(){
   const goal=parseInt(loadSettings().waterdoel)||8,filled=getWaterToday();
@@ -2547,7 +2611,15 @@ function flashStat(statId){
   el.classList.remove('stat-flash');
   void el.offsetWidth;
   el.classList.add('stat-flash');
-  setTimeout(()=>el.classList.remove('stat-flash'),800);
+  setTimeout(()=>el.classList.remove('stat-flash'),700);
+}
+function popCard(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.remove('card-pop');
+  void el.offsetWidth;
+  el.classList.add('card-pop');
+  setTimeout(()=>el.classList.remove('card-pop'),600);
 }
 
 // ===== NAAM =====
@@ -2732,7 +2804,7 @@ function quickAddSlaap(){
   save(KEYS.slaap,data);
   document.getElementById('q-slaap-uren').value='';
   savePop('dash-slaap-chart-card');flashStat('stat-slaap');
-  renderDashboard();showToast('😴 '+uren+' uur slaap opgeslagen ('+fmtDate(datum)+')');triggerAutoSync();
+  popCard('dash-slaap-chart-card');renderDashboard();showToast('😴 '+uren+' uur slaap opgeslagen ('+fmtDate(datum)+')');triggerAutoSync();
 }
 
 function renderDashSlaapChart(){
@@ -2799,6 +2871,195 @@ function renderDashSlaapChart(){
   const filledPoints=days.map((d,i)=>counts[i]?{uren:uren[i]}:null);
   charts['dashSlaapChart'].options.animation={onComplete:()=>drawSlaapLabels('dashSlaapChart',filledPoints)};
   charts['dashSlaapChart'].update();
+}
+
+// ===== LEVEL & XP SYSTEEM (#9, #10) =====
+const LEVEL_TITLES=['','Beginner','Starter','Op Dreef','Doorzetter','Vastberaden',
+  'Gedisciplineerd','Strijder','Kampioen','Elite','Legende'];
+const LEVEL_XP=[0,0,100,250,500,900,1400,2000,2800,3800,5000];
+
+function berekenXP(){
+  const gData=load(KEYS.gewicht);
+  const sData=load(KEYS.sport);
+  const wData=load(KEYS.water);
+  const slData=load(KEYS.slaap);
+  const settings=loadSettings();
+
+  let xp=0;
+  const breakdown=[];
+
+  // Gewicht: 15 XP per meting
+  const gXP=gData.length*15;
+  xp+=gXP;
+  if(gXP>0) breakdown.push({icon:'⚖️',label:'Gewichtsmetingen',xp:gXP,count:gData.length});
+
+  // Sport: 20 XP per training
+  const sXP=sData.length*20;
+  xp+=sXP;
+  if(sXP>0) breakdown.push({icon:'🏃',label:'Trainingen',xp:sXP,count:sData.length});
+
+  // Water: 5 XP per dag waterdoel gehaald
+  const doel=parseInt(settings.waterdoel)||8;
+  const waterDagen=wData.filter(x=>x.glazen>=doel).length;
+  const wXP=waterDagen*5;
+  xp+=wXP;
+  if(wXP>0) breakdown.push({icon:'💧',label:'Waterdoel gehaald',xp:wXP,count:waterDagen});
+
+  // Slaap: 10 XP per nacht +7u
+  const goedeSlaap=slData.filter(x=>x.uren>=7).length;
+  const slXP=goedeSlaap*10;
+  xp+=slXP;
+  if(slXP>0) breakdown.push({icon:'😴',label:'Goed geslapen (≥7u)',xp:slXP,count:goedeSlaap});
+
+  // Gewicht afgevallen: 50 XP per 5 kg
+  const startGew=settings.startgewicht||(gData.length>0?Math.max(...gData.map(x=>x.val)):null);
+  const latest=gData.length>0?gData[gData.length-1].val:null;
+  if(startGew&&latest){
+    const afgevallen=Math.max(0,startGew-latest);
+    const mijlpaalXP=Math.floor(afgevallen/5)*50;
+    xp+=mijlpaalXP;
+    if(mijlpaalXP>0) breakdown.push({icon:'🏆',label:'Mijlpalen (per 5kg)',xp:mijlpaalXP,count:Math.floor(afgevallen/5)});
+  }
+
+  // Streaks: 5 XP per streak dag
+  const waterStreak=calcWaterStreak();
+  const sportStreak=calcSportStreak();
+  const streakXP=(waterStreak+sportStreak)*5;
+  xp+=streakXP;
+  if(streakXP>0) breakdown.push({icon:'🔥',label:'Streak bonus',xp:streakXP,count:waterStreak+sportStreak+' dagen'});
+
+  return{xp,breakdown};
+}
+
+function getLevel(xp){
+  let level=1;
+  for(let i=1;i<LEVEL_XP.length;i++){
+    if(xp>=LEVEL_XP[i]) level=i;
+  }
+  return Math.min(level,10);
+}
+
+function renderUitdagingen(){
+  const{xp,breakdown}=berekenXP();
+  const level=getLevel(xp);
+  const nextLevel=Math.min(level+1,10);
+  const xpForThis=LEVEL_XP[level];
+  const xpForNext=LEVEL_XP[nextLevel]||LEVEL_XP[10];
+  const pct=level>=10?100:Math.round((xp-xpForThis)/(xpForNext-xpForThis)*100);
+
+  // Level cirkel
+  document.getElementById('level-num').textContent=level;
+  document.getElementById('level-title').textContent=LEVEL_TITLES[level];
+  document.getElementById('xp-display').textContent=xp+' / '+(level>=10?xp:xpForNext)+' XP';
+  document.getElementById('xp-bar').style.width=pct+'%';
+  document.getElementById('xp-badge-header').textContent=xp+' XP';
+  document.getElementById('level-next').textContent=level>=10?'Maximum level bereikt! 🏆':`Nog ${xpForNext-xp} XP voor Level ${nextLevel} — ${LEVEL_TITLES[nextLevel]}`;
+
+  // Level kleur aanpassen
+  const colors=['','#b89880','#c8954a','#7a9e7e','#6a9ec5','#c47a7a','#c8954a','#7a3030','#3d2b1f','#c8954a','#7a3030'];
+  const circle=document.getElementById('level-circle');
+  if(circle){circle.style.borderColor=colors[level]||'var(--gold)';circle.style.background=colors[level]+'22'||'var(--gold-pale)';}
+  const numEl=document.getElementById('level-num');
+  if(numEl) numEl.style.color=colors[level]||'var(--gold)';
+
+  // XP breakdown
+  const bel=document.getElementById('xp-breakdown');
+  if(bel) bel.innerHTML=breakdown.map(b=>`
+    <div style="background:var(--parchment);border-radius:10px;padding:10px 12px;text-align:center">
+      <div style="font-size:1.3rem">${b.icon}</div>
+      <div style="font-size:1rem;font-weight:700;font-family:var(--font-head);color:var(--text)">+${b.xp}</div>
+      <div style="font-size:.65rem;color:var(--text-muted);margin-top:2px">${b.label}</div>
+    </div>`).join('');
+
+  // XP gids
+  const guide=document.getElementById('xp-guide');
+  if(guide) guide.innerHTML=[
+    {icon:'⚖️',txt:'Gewichtsmeting invoeren',xp:'+15 XP'},
+    {icon:'🏃',txt:'Training registreren',xp:'+20 XP'},
+    {icon:'💧',txt:'Waterdoel halen',xp:'+5 XP'},
+    {icon:'😴',txt:'7+ uur slapen',xp:'+10 XP'},
+    {icon:'🏆',txt:'Elke 5 kg afvallen',xp:'+50 XP'},
+    {icon:'🔥',txt:'Streak dag (water/sport)',xp:'+5 XP'},
+  ].map(g=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-light)">
+      <div style="font-size:1.2rem;width:28px;text-align:center">${g.icon}</div>
+      <div style="flex:1;font-size:.85rem;color:var(--text-soft)">${g.txt}</div>
+      <div style="font-size:.82rem;font-weight:700;color:var(--gold);background:var(--gold-pale);padding:3px 10px;border-radius:999px">${g.xp}</div>
+    </div>`).join('');
+
+  renderChallenges();
+}
+
+// ===== WEKELIJKSE UITDAGINGEN (#12) =====
+function getWeekStart(){
+  const d=new Date();
+  const dow=d.getDay();
+  const mon=new Date(d);
+  mon.setDate(d.getDate()-(dow===0?6:dow-1));
+  return mon.toISOString().slice(0,10);
+}
+
+function getChallenges(){
+  const weekStart=getWeekStart();
+  const gData=load(KEYS.gewicht);
+  const sData=load(KEYS.sport);
+  const wData=load(KEYS.water);
+  const slData=load(KEYS.slaap);
+  const settings=loadSettings();
+  const doel=parseInt(settings.waterdoel)||8;
+  const sportDoel=parseInt(settings.sportdoel)||3;
+
+  // Bepaal welke dag van de week het is (0=ma, 6=zo)
+  const today=new Date();
+  const weekDays=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(today);
+    d.setDate(today.getDate()-((today.getDay()===0?6:today.getDay()-1))+i);
+    weekDays.push(d.toISOString().slice(0,10));
+  }
+
+  const sportDezeWeek=sData.filter(x=>weekDays.includes(x.datum)).length;
+  const waterDezeWeek=weekDays.filter(d=>{const e=wData.find(x=>x.datum===d);return e&&e.glazen>=doel;}).length;
+  const slaapDezeWeek=slData.filter(x=>weekDays.includes(x.datum)&&x.uren>=7).length;
+  const gewichtDezeWeek=gData.filter(x=>weekDays.includes(x.datum)).length;
+  const startGew=settings.startgewicht||(gData.length>0?Math.max(...gData.map(x=>x.val)):null);
+  const latest=gData.length>0?gData[gData.length-1].val:null;
+  const afgevallen=startGew&&latest?Math.max(0,startGew-latest):0;
+
+  return[
+    {icon:'🏃',title:`Train ${sportDoel}x deze week`,desc:`${sportDezeWeek} van ${sportDoel} trainingen`,progress:sportDezeWeek,doel:sportDoel,xp:75},
+    {icon:'💧',title:'Drink 5 dagen je waterdoel',desc:`${waterDezeWeek} van 5 dagen`,progress:waterDezeWeek,doel:5,xp:50},
+    {icon:'😴',title:'Slaap 4 nachten 7+ uur',desc:`${slaapDezeWeek} van 4 nachten`,progress:slaapDezeWeek,doel:4,xp:60},
+    {icon:'⚖️',title:'Meet 2x je gewicht',desc:`${gewichtDezeWeek} van 2 metingen`,progress:gewichtDezeWeek,doel:2,xp:30},
+    {icon:'🎯',title:'Val deze week 0,5 kg af',desc:afgevallen>=0.5?'Behaald! ✓':`${afgevallen.toFixed(1)} kg afgevallen`,progress:Math.min(afgevallen/0.5,1)*1,doel:1,xp:100},
+  ];
+}
+
+function renderChallenges(){
+  const challenges=getChallenges();
+  const done=challenges.filter(c=>c.progress>=c.doel).length;
+  const weekEl=document.getElementById('challenges-week');
+  if(weekEl){weekEl.textContent=`${done}/${challenges.length} behaald`;weekEl.className='badge '+(done===challenges.length?'badge-good':done>0?'badge-gold':'badge-neutral');}
+
+  const list=document.getElementById('challenges-list');
+  if(!list) return;
+  list.innerHTML=challenges.map(c=>{
+    const pct=Math.min(100,Math.round(c.progress/c.doel*100));
+    const done=c.progress>=c.doel;
+    return `<div style="padding:14px;background:${done?'var(--sage-pale)':'var(--parchment)'};border-radius:14px;border:1.5px solid ${done?'var(--sage-light)':'var(--border)'}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:1.3rem">${c.icon}</div>
+        <div style="flex:1">
+          <div style="font-size:.88rem;font-weight:700;color:var(--text)">${c.title}</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:1px">${c.desc}</div>
+        </div>
+        <div style="font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--gold-pale);color:var(--gold);white-space:nowrap">+${c.xp} XP</div>
+      </div>
+      <div style="height:6px;background:rgba(0,0,0,.08);border-radius:999px;overflow:hidden">
+        <div style="height:100%;border-radius:999px;background:${done?'var(--sage)':'var(--gold)'};width:${pct}%;transition:width .5s"></div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ===== VOORTGANG TIJDLIJN (#11) =====
