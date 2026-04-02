@@ -1023,7 +1023,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div id="last-sync-time" style="font-size:.62rem;color:rgba(255,255,255,.28);padding:0 14px 4px;min-height:14px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.9.1 ↑</div>
+    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.9.4 ↑</div>
   </div>
 </aside>
 
@@ -1276,12 +1276,14 @@ html.dark .mob-sheet{background:var(--card-bg);}
         <button class="btn sage" onclick="quickAddWater()" style="width:100%;padding:7px;margin-bottom:12px">＋ Glas water</button>
 
         <!-- Cola glazen -->
-        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#c0392b;margin-bottom:4px">🥤 Cola</div>
-        <div class="water-cups" id="dash-cola-cups" style="gap:5px"></div>
-        <div class="progress-bar" style="background:#fde8e8;margin-bottom:10px">
-          <div class="progress-fill" id="dash-cola-progress" style="width:0%;background:linear-gradient(90deg,#c0392b,#e74c3c)"></div>
+        <div class="dash-cola-section">
+          <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#c0392b;margin-bottom:4px">🥤 Cola</div>
+          <div class="water-cups" id="dash-cola-cups" style="gap:5px"></div>
+          <div class="progress-bar" style="background:#fde8e8;margin-bottom:10px">
+            <div class="progress-fill" id="dash-cola-progress" style="width:0%;background:linear-gradient(90deg,#c0392b,#e74c3c)"></div>
+          </div>
+          <button class="btn" onclick="quickAddCola()" style="width:100%;padding:7px;background:var(--rose-pale);color:var(--rose);border-color:var(--rose-light)">＋ Glas cola</button>
         </div>
-        <button class="btn" onclick="quickAddCola()" style="width:100%;padding:7px;background:var(--rose-pale);color:var(--rose);border-color:var(--rose-light)">＋ Glas cola</button>
       </div>
     </div>
 
@@ -1911,6 +1913,10 @@ html.dark .mob-sheet{background:var(--card-bg);}
             <label class="toggle"><input type="checkbox" id="tog-water" data-key="water" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
           </div>
           <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">🥤 Cola</div><div class="toggle-desc">Cola glazen bijhouden</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-cola" data-key="cola" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+          <div class="toggle-row">
             <div class="toggle-info"><div class="toggle-label">😴 Slaap</div><div class="toggle-desc">Slaapuren en kwaliteit</div></div>
             <label class="toggle"><input type="checkbox" id="tog-slaap" data-key="slaap" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
           </div>
@@ -2102,12 +2108,10 @@ html.dark .mob-sheet{background:var(--card-bg);}
   <div class="mob-more-btn" onclick="switchTab('rapport');closeMobSheets()">
     <div class="mob-more-icon">📊</div><span>Rapport</span>
   </div>
-  <div class="mob-more-btn" onclick="switchTab('klachten');closeMobSheets()">
-    <div class="mob-more-icon">🩺</div><span>Klachten</span>
-  </div>
   <div class="mob-more-btn" onclick="switchTab('instellingen');closeMobSheets()">
     <div class="mob-more-icon">⚙️</div><span>Instellingen</span>
   </div>
+
 </div>
 
 </div><!-- /app -->
@@ -2307,8 +2311,27 @@ function renderBMI(latest){
   valEl.textContent=bmi;catEl.textContent=cat.label;
   badgeEl.textContent=cat.label;badgeEl.className='badge '+cat.cls;
   circleEl.style.borderColor=cat.color;circleEl.style.background=cat.color+'22';
-  const pct=Math.max(0,Math.min(100,Math.round((bmi-10)/35*100)));
-  ptrEl.textContent='▲ BMI '+bmi;ptrEl.style.paddingLeft=`calc(${pct}% - 20px)`;
+  // BMI pointer: positie berekend op basis van echte flex-segmenten
+  // Segmenten: <18.5 (flex 1.85) | 18.5-25 (flex 0.85) | 25-30 (flex 1) | 30-35 (flex 1) | 35+ (flex 1)
+  // Totaal flex: 5.7
+  function bmiToPct(b){
+    const segs=[
+      {van:10, tot:18.5, flexStart:0,      flexEnd:1.85},
+      {van:18.5,tot:25,  flexStart:1.85,   flexEnd:2.70},
+      {van:25,  tot:30,  flexStart:2.70,   flexEnd:3.70},
+      {van:30,  tot:35,  flexStart:3.70,   flexEnd:4.70},
+      {van:35,  tot:50,  flexStart:4.70,   flexEnd:5.70},
+    ];
+    const total=5.70;
+    const seg=segs.find(s=>b>=s.van&&b<s.tot)||segs[segs.length-1];
+    const within=(b-seg.van)/(seg.tot-seg.van);
+    const flexPos=seg.flexStart+within*(seg.flexEnd-seg.flexStart);
+    return Math.max(0,Math.min(100,flexPos/total*100));
+  }
+  const pct=bmiToPct(parseFloat(bmi));
+  ptrEl.innerHTML=`<span style="display:inline-block;transform:translateX(-50%);white-space:nowrap">▲ BMI ${bmi}</span>`;
+  ptrEl.style.paddingLeft=`${pct}%`;
+  ptrEl.style.paddingRight='0';
   if(s.doelgewicht&&s.lengte){
     const tBMI=calcBMI(s.doelgewicht,s.lengte);
     subEl.textContent=`Doel ${s.doelgewicht}kg → BMI ${tBMI} (${bmiCat(tBMI).label})`;
@@ -3266,7 +3289,7 @@ function renderSettings(){
     renderHerhalingList();
     applyCompact();
     const v=getVis();
-    ['gewicht','sport','water','slaap','snel','streaks','voortgang','weekdoel','bmi'].forEach(k=>{
+    ['gewicht','sport','water','cola','slaap','snel','streaks','voortgang','weekdoel','bmi'].forEach(k=>{
       const el=document.getElementById('tog-'+k);
       if(el) el.checked=v[k];
     });
@@ -4035,6 +4058,20 @@ function restoreDashOrder(){
 
 // ===== PATCHNOTES =====
 const PATCHNOTES=[
+  {versie:'v2.9.4',datum:'2 april 2026',items:[
+    'Data automatisch ophalen bij terugkeren naar app (visibilitychange + focus event)',
+    'Sync elke 60 seconden gethrottled zodat er geen onnodige calls zijn',
+    'Handmatige sync knop uit meer-menu verwijderd — niet meer nodig',
+  ]},
+  {versie:'v2.9.3',datum:'2 april 2026',items:[
+    'BMI pijl staat nu op de juiste positie op de kleurenbalk',
+    'Data ophalen knop toegevoegd in mobiel meer-menu (☁ Data ophalen van server)',
+    'Dubbele Klachten knop verwijderd uit mobiel meer-menu',
+  ]},
+  {versie:'v2.9.2',datum:'2 april 2026',items:[
+    'Cola module toggle toegevoegd in Instellingen — zet cola aan of uit',
+    'Cola sectie op dashboard en Drinken tab volgt de toggle',
+  ]},
   {versie:'v2.9.1',datum:'2 april 2026',items:[
     'Volledige mobiele optimalisatie — alle elementen geoptimaliseerd voor telefoon',
     'iOS zoom fix — invoervelden gebruiken font-size 16px, geen automatische zoom meer',
@@ -5948,7 +5985,7 @@ function renderDashboard(){
 }
 
 // ===== VISIBILITY TOGGLES =====
-const VIS_DEFAULTS={gewicht:true,sport:true,water:true,slaap:true,snel:true,streaks:true,voortgang:true,weekdoel:true,bmi:true};
+const VIS_DEFAULTS={gewicht:true,sport:true,water:true,cola:true,slaap:true,snel:true,streaks:true,voortgang:true,weekdoel:true,bmi:true};
 
 function getVis(){
   const s=loadSettings();
@@ -5994,6 +6031,17 @@ function applyVisibility(){
   show('dash-gewicht-chart', v.gewicht);
   show('dash-sport-chart', v.sport);
   show('dash-water-card', v.water);
+  // Cola sectie in dash-water-card verbergen/tonen
+  const colaSection=document.getElementById('dash-cola-cups');
+  const colaParent=colaSection?.closest('.gap-section')||document.querySelector('#dash-water-card .btn[onclick="quickAddCola()"]')?.parentElement;
+  // Verberg cola delen in dashboard water kaart
+  const colaParts=document.querySelectorAll('.dash-cola-section');
+  colaParts.forEach(el=>el.style.display=v.cola?'':'none');
+  // Cola in drinken tab
+  const colaTabKaart=document.getElementById('cola-val')?.closest('.card');
+  if(colaTabKaart) colaTabKaart.style.display=v.cola?'':'none';
+  const colaGrafiek=document.getElementById('colaChart')?.closest('.card');
+  if(colaGrafiek) colaGrafiek.style.display=v.cola?'':'none';
   show('dash-mijlpalen', true); // always show
 
   // Show/hide entire rows — use grid display to restore
@@ -6042,7 +6090,39 @@ async function init(){
   setupPWA();
   initWaterReminder();
 
-  // Push altijd naar Firebase als de pagina gesloten wordt
+  // Automatisch data ophalen als je terugkeert naar de app
+  let lastPullTime=Date.now();
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'){
+      const now=Date.now();
+      // Alleen opnieuw ophalen als het meer dan 60 seconden geleden was
+      if(now-lastPullTime>60000){
+        lastPullTime=now;
+        const{url,user}=getFirebaseConfig();
+        if(url&&user){
+          const ind=document.getElementById('autosync-indicator');
+          if(ind) ind.textContent='☁ Data verversen...';
+          autoInitSync().then(()=>{
+            const activeTab=document.querySelector('.view.active')?.id?.replace('view-','');
+            if(activeTab) switchTab(activeTab);
+          });
+        }
+      }
+    }
+  });
+
+  // Ook ophalen bij focus (desktop browser tab switch)
+  window.addEventListener('focus',()=>{
+    const now=Date.now();
+    if(now-lastPullTime>60000){
+      lastPullTime=now;
+      const{url,user}=getFirebaseConfig();
+      if(url&&user) autoInitSync().then(()=>{
+        const activeTab=document.querySelector('.view.active')?.id?.replace('view-','');
+        if(activeTab) switchTab(activeTab);
+      });
+    }
+  });
   window.addEventListener('beforeunload',()=>{
     const{url,user}=getFirebaseConfig();
     if(!url||!user) return;
