@@ -621,6 +621,10 @@ textarea { resize:vertical; min-height:70px; }
 .checkin-btn-main:hover{opacity:.85}
 .checkin-done{background:var(--sage-pale);border:1.5px solid var(--sage-light);border-radius:var(--radius);padding:10px 18px;display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--sage);font-weight:600}
 
+.cup.cola-empty{background:var(--rose-pale);border-color:var(--rose-light);}
+.cup.cola-full{background:#c0392b;border-color:#922b21;}
+.cup.cola-full::after{content:'';display:block;width:40%;height:25%;background:rgba(255,255,255,.25);border-radius:2px;margin:4px auto 0;}
+
 /* ===== COMPACT MODUS (#34) ===== */
 @media(max-width:768px){
   html.compact .card{padding:10px 12px!important;}
@@ -904,7 +908,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div id="last-sync-time" style="font-size:.62rem;color:rgba(255,255,255,.28);padding:0 14px 4px;min-height:14px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.0.0 ↑</div>
+    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.1.0 ↑</div>
   </div>
 </aside>
 
@@ -1141,20 +1145,31 @@ html.dark .mob-sheet{background:var(--card-bg);}
         </div>
       </div>
 
-      <!-- Water vandaag -->
+      <!-- Drinken vandaag -->
       <div class="card" id="dash-water-card">
         <div class="card-head-row">
-          <div class="card-label">Water vandaag</div>
+          <div class="card-label">Drinken vandaag</div>
           <div style="display:flex;align-items:center;gap:8px">
             <span id="q-water-count" style="font-family:var(--font-head);font-size:.95rem;color:var(--sage)">0/8</span>
             <div id="water-pct-badge" class="badge badge-neutral">0%</div>
           </div>
         </div>
+
+        <!-- Water glazen -->
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--sage);margin-bottom:4px">💧 Water</div>
         <div class="water-cups" id="dash-cups" style="gap:5px"></div>
-        <div class="progress-bar" style="background:var(--sage-pale);margin-top:10px">
+        <div class="progress-bar" style="background:var(--sage-pale);margin-bottom:10px">
           <div class="progress-fill" id="dash-water-progress" style="width:0%;background:linear-gradient(90deg,var(--sage),var(--sage-light))"></div>
         </div>
-        <button class="btn sage" onclick="quickAddWater()" style="width:100%;margin-top:10px;padding:8px">＋ Glas toevoegen</button>
+        <button class="btn sage" onclick="quickAddWater()" style="width:100%;padding:7px;margin-bottom:12px">＋ Glas water</button>
+
+        <!-- Cola blikjes -->
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#c0392b;margin-bottom:4px">🥤 Cola</div>
+        <div class="water-cups" id="dash-cola-cups" style="gap:5px"></div>
+        <div class="progress-bar" style="background:#fde8e8;margin-bottom:10px">
+          <div class="progress-fill" id="dash-cola-progress" style="width:0%;background:linear-gradient(90deg,#c0392b,#e74c3c)"></div>
+        </div>
+        <button class="btn" onclick="quickAddCola()" style="width:100%;padding:7px;background:var(--rose-pale);color:var(--rose);border-color:var(--rose-light)">＋ Blikje cola</button>
       </div>
     </div>
 
@@ -1319,13 +1334,14 @@ html.dark .mob-sheet{background:var(--card-bg);}
   <!-- ===== WATER ===== -->
   <div class="view" id="view-water">
     <div class="page-header">
-      <div><div class="page-title">💧 <em>Water</em></div><div class="page-subtitle">Hydratatie bijhouden</div></div>
+      <div><div class="page-title">🥤 <em>Drinken</em></div><div class="page-subtitle">Water en cola bijhouden</div></div>
     </div>
     <div class="grid-2 gap-section">
+      <!-- Water kolom -->
       <div class="card">
         <div class="card-head-row">
           <div>
-            <div class="card-label">Vandaag</div>
+            <div class="card-label">💧 Water vandaag</div>
             <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
               <div class="card-value" id="water-val">0</div>
               <div class="card-unit">/ <span id="water-doel-display">8</span> glazen</div>
@@ -1340,9 +1356,37 @@ html.dark .mob-sheet{background:var(--card-bg);}
         <div style="font-size:.78rem;color:var(--text-muted);font-style:italic;margin-top:6px;margin-bottom:16px">Tik een glas aan · doel: <strong id="water-doel-text">8</strong> glazen</div>
         <button class="btn secondary" onclick="resetWater()" style="width:100%">↺ Reset vandaag</button>
       </div>
+
+      <!-- Cola kolom -->
       <div class="card">
-        <div class="card-label" style="margin-bottom:14px">Afgelopen 7 dagen</div>
+        <div class="card-head-row">
+          <div>
+            <div class="card-label">🥤 Cola vandaag</div>
+            <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
+              <div class="card-value" id="cola-val" style="color:#c0392b">0</div>
+              <div class="card-unit">/ <span id="cola-doel-display">3</span> blikjes</div>
+            </div>
+          </div>
+          <div id="cola-badge" class="badge badge-neutral">0%</div>
+        </div>
+        <div class="water-cups" id="cola-cups"></div>
+        <div class="progress-bar" style="background:#fde8e8">
+          <div class="progress-fill" id="cola-progress" style="width:0%;background:linear-gradient(90deg,#c0392b,#e74c3c)"></div>
+        </div>
+        <div style="font-size:.78rem;color:var(--text-muted);font-style:italic;margin-top:6px;margin-bottom:16px">Tik een blikje aan · max doel: <strong id="cola-doel-text">3</strong> blikjes</div>
+        <button class="btn secondary" onclick="resetCola()" style="width:100%">↺ Reset vandaag</button>
+      </div>
+    </div>
+
+    <!-- Grafieken -->
+    <div class="grid-2 gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">💧 Water afgelopen 7 dagen</div>
         <div class="chart-wrap tall"><canvas id="waterChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">🥤 Cola afgelopen 7 dagen</div>
+        <div class="chart-wrap tall"><canvas id="colaChart"></canvas></div>
       </div>
     </div>
   </div>
@@ -1567,6 +1611,10 @@ html.dark .mob-sheet{background:var(--card-bg);}
             <div class="input-group">
               <label>Weekdoel sport (trainingen/week)</label>
               <input type="number" id="set-sportdoel" placeholder="3" min="1" max="14">
+            </div>
+            <div class="input-group">
+              <label>Cola dagdoel (max blikjes/dag)</label>
+              <input type="number" id="set-coladoel" placeholder="3" min="1" max="10">
             </div>
             <div class="input-group">
               <label>Mijn motivatie</label>
@@ -2131,6 +2179,58 @@ function renderSport(){
     options:{...cfg2,scales:{...cfg2.scales,y:{...cfg2.scales.y,beginAtZero:true,ticks:{...cfg2.scales.y.ticks,stepSize:1}}}}});
 }
 
+// ===== COLA =====
+const KEYS_COLA='tracker_cola';
+function getColaToday(){const e=JSON.parse(localStorage.getItem(KEYS_COLA)||'[]').find(x=>x.datum===todayStr());return e?e.blikjes:0;}
+function setColaToday(n){const d=JSON.parse(localStorage.getItem(KEYS_COLA)||'[]').filter(x=>x.datum!==todayStr());d.push({datum:todayStr(),blikjes:n});localStorage.setItem(KEYS_COLA,JSON.stringify(d));}
+
+function renderColaCups(cid,filled,doel,interactive){
+  const el=document.getElementById(cid);
+  if(!el) return;
+  let h='';
+  for(let i=0;i<doel;i++){
+    const f=i<filled;
+    h+=`<div class="cup ${f?'cola-full':'cola-empty'}" ${interactive?`onclick="toggleCola(${i+1})" style="cursor:pointer"`:''}></div>`;
+  }
+  el.innerHTML=h;
+}
+
+function toggleCola(idx){
+  const doel=parseInt(loadSettings().coladoel)||3;
+  const cur=getColaToday();
+  setColaToday(Math.max(0,Math.min(idx<=cur?idx-1:idx,doel)));
+  renderDashboard();renderWater();triggerAutoSync();
+}
+
+function quickAddCola(){
+  const doel=parseInt(loadSettings().coladoel)||3;
+  const cur=getColaToday();
+  setColaToday(Math.min(cur+1,doel+3)); // max 3 boven doel
+  flashStat('stat-water');renderDashboard();
+  showToast('🥤 Cola bijgehouden! ('+getColaToday()+' blikjes)');
+  haptic([30,20,30]);triggerAutoSync();
+}
+
+function resetCola(){setColaToday(0);renderWater();renderDashboard();}
+
+function renderColaChart(){
+  destroyChart('colaChart');
+  const el=document.getElementById('colaChart');
+  if(!el) return;
+  const colaData=JSON.parse(localStorage.getItem(KEYS_COLA)||'[]');
+  const days=last7Days();
+  const counts=days.map(d=>{const e=colaData.find(x=>x.datum===d);return e?e.blikjes:0;});
+  const ctx=el.getContext('2d'),cfg=chartDefaults();
+  const doel=parseInt(loadSettings().coladoel)||3;
+  charts['colaChart']=new Chart(ctx,{type:'bar',
+    data:{labels:days.map(d=>{const p=d.split('-');return `${p[2]}/${p[1]}`;}),
+      datasets:[{data:counts,
+        backgroundColor:counts.map(v=>v>doel?'rgba(192,57,43,.8)':v>0?'rgba(192,57,43,.4)':'rgba(192,57,43,.1)'),
+        borderColor:'#c0392b',borderWidth:1.5,borderRadius:8}]},
+    options:{...cfg,scales:{...cfg.scales,y:{...cfg.scales.y,beginAtZero:true,ticks:{...cfg.scales.y.ticks,stepSize:1},
+      suggestedMax:Math.max(doel+1,...counts,3)}}}});
+}
+
 // ===== WATER =====
 function getWaterToday(){const e=load(KEYS.water).find(x=>x.datum===todayStr());return e?e.glazen:0;}
 function setWaterToday(n){const d=load(KEYS.water).filter(x=>x.datum!==todayStr());d.push({datum:todayStr(),glazen:n});save(KEYS.water,d);}
@@ -2145,19 +2245,34 @@ function toggleCup(idx){
 function resetWater(){setWaterToday(0);renderWater();renderDashboard();}
 function renderWater(){
   const goal=parseInt(loadSettings().waterdoel)||8,filled=getWaterToday(),pct=Math.min(100,Math.round(filled/goal*100));
-  document.getElementById('water-val').textContent=filled;
-  document.getElementById('water-doel-display').textContent=goal;
-  document.getElementById('water-doel-text').textContent=goal;
-  document.getElementById('water-progress').style.width=pct+'%';
+  const wv=document.getElementById('water-val');if(wv)wv.textContent=filled;
+  const wdd=document.getElementById('water-doel-display');if(wdd)wdd.textContent=goal;
+  const wdt=document.getElementById('water-doel-text');if(wdt)wdt.textContent=goal;
+  const wp=document.getElementById('water-progress');if(wp)wp.style.width=pct+'%';
   const b2=document.getElementById('water-pct-badge2');
   if(b2){b2.textContent=pct+'%';b2.className='badge '+(pct>=100?'badge-good':pct>50?'badge-gold':'badge-neutral');}
   renderWaterCups('water-cups',filled,goal,true);
+
+  // Cola
+  const coladoel=parseInt(loadSettings().coladoel)||3;
+  const colaFilled=getColaToday();
+  const colaEl=document.getElementById('cola-val');if(colaEl)colaEl.textContent=colaFilled;
+  const colaDd=document.getElementById('cola-doel-display');if(colaDd)colaDd.textContent=coladoel;
+  const colaDt=document.getElementById('cola-doel-text');if(colaDt)colaDt.textContent=coladoel;
+  const colaMax=Math.max(coladoel,colaFilled,3);
+  const colaPct=Math.min(100,Math.round(colaFilled/coladoel*100));
+  const colaProg=document.getElementById('cola-progress');if(colaProg)colaProg.style.width=colaPct+'%';
+  const colaBadge=document.getElementById('cola-badge');
+  if(colaBadge){colaBadge.textContent=colaFilled+' blikjes';colaBadge.className='badge '+(colaFilled===0?'badge-good':colaFilled<=coladoel?'badge-gold':'badge-bad');}
+  renderColaCups('cola-cups',colaFilled,colaMax,true);
+
   destroyChart('waterChart');
   const days=last7Days(),counts=days.map(d=>{const e=load(KEYS.water).find(x=>x.datum===d);return e?e.glazen:0;});
   const ctx=document.getElementById('waterChart').getContext('2d'),cfg=chartDefaults();
   const grad=ctx.createLinearGradient(0,0,0,200);grad.addColorStop(0,'rgba(122,158,126,0.45)');grad.addColorStop(1,'rgba(122,158,126,0.05)');
   charts['waterChart']=new Chart(ctx,{type:'bar',data:{labels:days.map(d=>{const p=d.split('-');return `${p[2]}/${p[1]}`;}),datasets:[{data:counts,backgroundColor:counts.map((_,i)=>i===6?'rgba(122,158,126,0.75)':'rgba(122,158,126,0.3)'),borderColor:'#7a9e7e',borderWidth:1.5,borderRadius:8}]},
     options:{...cfg,scales:{...cfg.scales,y:{...cfg.scales.y,beginAtZero:true,max:Math.max(goal+1,...counts,8),ticks:{...cfg.scales.y.ticks,stepSize:1}}}}});
+  renderColaChart();
 }
 
 // ===== PRESTATIES =====
@@ -2199,8 +2314,10 @@ function renderSettings(){
     if(s.lengte) document.getElementById('set-lengte').value=s.lengte;
     const wdEl=document.getElementById('set-waterdoel');
     const sdEl=document.getElementById('set-sportdoel');
+    const cdEl=document.getElementById('set-coladoel');
     if(wdEl) wdEl.value=s.waterdoel||8;
     if(sdEl) sdEl.value=s.sportdoel||3;
+    if(cdEl) cdEl.value=s.coladoel||3;
     if(s.firebaseUrl){ const el=document.getElementById('set-firebase-url');if(el) el.value=s.firebaseUrl; }
     if(s.firebaseUser){ const el=document.getElementById('set-firebase-user');if(el) el.value=s.firebaseUser; }
     const motEl=document.getElementById('set-motivatie');
@@ -2227,7 +2344,8 @@ function saveSettings(){
   if(naam) s.naam=naam;
   if(!isNaN(start)) s.startgewicht=start;if(!isNaN(doel)) s.doelgewicht=doel;
   if(!isNaN(lengte)&&lengte>0) s.lengte=lengte;
-  s.waterdoel=water;s.sportdoel=sportdoel;if(fbUrl) s.firebaseUrl=fbUrl;if(fbUser) s.firebaseUser=fbUser;
+  const coladoel=parseInt(document.getElementById('set-coladoel')?.value)||3;
+s.waterdoel=water;s.sportdoel=sportdoel;s.coladoel=coladoel;if(fbUrl) s.firebaseUrl=fbUrl;if(fbUser) s.firebaseUser=fbUser;
   const motEl=document.getElementById('set-motivatie');
   if(motEl) s.motivatie=motEl.value.trim();
   saveSettingsData(s);renderDashboard();renderMotivatie();applyVisibility();triggerAutoSync();alert('✓ Instellingen opgeslagen!');
@@ -2965,6 +3083,14 @@ function restoreDashOrder(){
 
 // ===== PATCHNOTES =====
 const PATCHNOTES=[
+  {versie:'v2.1.0',datum:'2 april 2026',items:[
+    'Cola tracker toegevoegd naast water — blikjes bijhouden met eigen grafiek',
+    'Water tab hernoemd naar Drinken met water + cola grafieken naast elkaar',
+    'Dashboard water kaart hernoemd naar Drinken met cola sectie',
+    'Cola dagdoel instellen in Instellingen',
+    'Cola data gesynchroniseerd via Firebase',
+    'Versienummer klikbaar met volledige patchnotes',
+  ]},
   {versie:'v2.0.0',datum:'2 april 2026',items:[
     'Dagelijkse check-in met streak en +5 XP bonus',
     'Inactief alarm — melding als je 2-5 dagen niks gelogd hebt',
@@ -4553,6 +4679,14 @@ function renderDashboard(){
   const wp=document.getElementById('dash-water-progress');
   if(wp) wp.style.width=pct+'%';
 
+  // Cola cups in dashboard
+  const coladoel=parseInt(settings.coladoel)||3;
+  const colaFilled=getColaToday();
+  const colaMax=Math.max(coladoel,colaFilled,3);
+  renderColaCups('dash-cola-cups',colaFilled,colaMax,true);
+  const colaP=document.getElementById('dash-cola-progress');
+  if(colaP) colaP.style.width=Math.min(100,Math.round(colaFilled/coladoel*100))+'%';
+
   updateQuickWaterCount();
   renderDashSlaapChart();
   renderQuote();
@@ -4659,7 +4793,7 @@ async function init(){
     const payload=JSON.stringify({
       gewicht:load(KEYS.gewicht),sport:load(KEYS.sport),
       water:load(KEYS.water),slaap:load(KEYS.slaap),
-      meetmomenten:loadMM(),settings:loadSettings()
+      meetmomenten:loadMM(),cola:JSON.parse(localStorage.getItem('tracker_cola')||'[]'),settings:loadSettings()
     });
     // sendBeacon is betrouwbaarder bij sluiten browser
     navigator.sendBeacon(`${url}/welzijn/${user}.json?method=PUT`,
