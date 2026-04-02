@@ -2152,8 +2152,8 @@ function exportVolledigRapport(){
   const s=loadSettings();
   const naam=s.naam||'Gebruiker';
   const nu=new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'});
-  const mnamen=['','januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-  function fmtD(ds){if(!ds)return'—';const[y,m,d]=ds.split('-');return`${parseInt(d)} ${mnamen[parseInt(m)]} ${y}`;}
+  const mnNL=['','januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  function fmtD(ds){if(!ds)return'—';const[y,m,d]=ds.split('-');return`${parseInt(d)} ${mnNL[parseInt(m)]} ${y}`;}
   function fmtS(ds){const[,m,d]=ds.split('-');return`${parseInt(d)}/${parseInt(m)}`;}
   function inR(ds){return ds>=van&&ds<=tot;}
 
@@ -2171,19 +2171,41 @@ function exportVolledigRapport(){
   const gemWater=wData.length>0?(wData.reduce((a,x)=>a+x.glazen,0)/wData.length).toFixed(1):null;
   const colaGlazen=colaArr.map(x=>x.blikjes||x.glazen||0);
   const gemCola=colaArr.length>0?(colaGlazen.reduce((a,v)=>a+v,0)/colaArr.length).toFixed(1):null;
-  const ernstK=['','#2e7d32','#e67e00','#c0392b','#8e0000'];
-  const ernstL=['','Licht','Matig','Flink','Ernstig'];
+  const wDoel=parseInt(s.waterdoel)||8;
+  const cDoel=parseInt(s.coladoel)||3;
 
   // Sport types
   const sportt={};sData.forEach(x=>{sportt[x.type]=(sportt[x.type]||0)+1;});
   const sportTagsHtml=Object.entries(sportt).sort((a,b)=>b[1]-a[1])
-    .map(([t,c])=>`<span style="display:inline-block;padding:3px 11px;border-radius:999px;font-size:10pt;margin:2px;background:#fdf0e0;border:1px solid #e8c88a;color:#7a3030">${t} ×${c}</span>`).join('');
+    .map(([t,n])=>`<span style="display:inline-block;padding:3px 11px;border-radius:999px;font-size:9.5pt;margin:2px;background:#fdf0e0;border:1px solid #e8c88a;color:#7a3030">${t} ×${n}</span>`).join('');
 
-  // Klachten samenvatting
-  const kt={};kData.forEach(k=>{if(!kt[k.klacht])kt[k.klacht]={count:0,icon:k.icon,totErnst:0};kt[k.klacht].count++;kt[k.klacht].totErnst+=k.ernst;});
+  // Klachten per dag
+  const ernstKM=['','#2e7d32','#e67e00','#c0392b','#8e0000'];
+  const ernstLM=['','Licht','Matig','Flink','Ernstig'];
+  function klachtenPerDagHtml(){
+    if(!kData.length) return '';
+    const perDag={};
+    kData.forEach(k=>{if(!perDag[k.datum])perDag[k.datum]=[];perDag[k.datum].push(k);});
+    const dagen=Object.keys(perDag).sort();
+    return dagen.map(dag=>{
+      const ks=perDag[dag];
+      return`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:0.5px solid #f0e4d4">
+        <div style="font-size:8pt;font-weight:700;color:#7a3030;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;display:flex;align-items:center;gap:6px">
+          ${fmtD(dag)}<span style="flex:1;height:1px;background:#f0e4d4;display:inline-block"></span>
+        </div>
+        ${ks.map(k=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:#fdf6ee;margin-bottom:4px">
+          <span style="font-size:1.1rem;width:24px;text-align:center;flex-shrink:0">${k.icon}</span>
+          <span style="font-weight:700;font-size:9.5pt;color:#3d2b1f;min-width:110px">${k.klacht}</span>
+          ${k.tijd?`<span style="font-size:8.5pt;color:#b89880;white-space:nowrap">⏰ ${k.tijd}</span>`:''}
+          <span style="padding:2px 9px;border-radius:999px;font-size:8pt;font-weight:700;background:${ernstKM[k.ernst]}18;color:${ernstKM[k.ernst]};border:1px solid ${ernstKM[k.ernst]}55">${ernstLM[k.ernst]}</span>
+          ${k.notitie?`<span style="font-size:8.5pt;color:#a07850;font-style:italic;flex:1">"${k.notitie}"</span>`:''}
+        </div>`).join('')}
+      </div>`;
+    }).join('');
+  }
 
-  // Heatmap sport SVG
-  function maakSportHeatmap(){
+  // Sport heatmap SVG
+  function maakHeatmapSVG(){
     const start=new Date(van);
     const dow=start.getDay();
     start.setDate(start.getDate()-(dow===0?6:dow-1));
@@ -2196,41 +2218,38 @@ function exportVolledigRapport(){
       return tr.duur<30?'#c8e6c9':tr.duur<=45?'#66bb6a':'#2e7d32';
     }
     const dagNm=['Ma','Di','Wo','Do','Vr','Za','Zo'];
-    const labelW=24,cellH=16,cellGap=3,topPad=18;
-    const totalH=topPad+(cellH+cellGap)*7+4;
-    const cellW=Math.max(12,Math.floor((680-labelW-(weeks-1)*cellGap)/weeks));
-    const vbW=labelW+(cellW+cellGap)*weeks;
-    let svg=`<svg width="100%" height="${totalH}" viewBox="0 0 ${vbW} ${totalH}" preserveAspectRatio="xMinYMin meet" xmlns="http://www.w3.org/2000/svg">`;
-    let prevM='';
+    const lW=26,cH=17,cG=3,tP=20,tH=tP+(cH+cG)*7+4;
+    const totW=700;
+    const cW=Math.max(12,Math.floor((totW-lW-(weeks-1)*cG)/weeks));
+    const vbW=lW+(cW+cG)*weeks;
+    let svg=`<svg width="100%" height="${tH}" viewBox="0 0 ${vbW} ${tH}" preserveAspectRatio="xMinYMin meet" xmlns="http://www.w3.org/2000/svg">`;
+    let pM='';
     for(let w=0;w<weeks;w++){
       const d=new Date(start);d.setDate(start.getDate()+w*7);
       const mo=d.toLocaleDateString('nl-NL',{month:'short'});
-      if(mo!==prevM){
-        svg+=`<text x="${labelW+w*(cellW+cellGap)}" y="12" font-size="8" fill="#b89880" font-family="Segoe UI,Arial,sans-serif">${mo}</text>`;
-        prevM=mo;
-      }
+      if(mo!==pM){svg+=`<text x="${lW+w*(cW+cG)}" y="13" font-size="8" fill="#b89880" font-family="Segoe UI,Arial,sans-serif">${mo}</text>`;pM=mo;}
     }
     for(let dag=0;dag<7;dag++){
-      const y=topPad+dag*(cellH+cellGap);
-      svg+=`<text x="${labelW-4}" y="${y+cellH*0.72}" text-anchor="end" font-size="8" fill="#b89880" font-family="Segoe UI,Arial,sans-serif">${dagNm[dag]}</text>`;
+      const y=tP+dag*(cH+cG);
+      svg+=`<text x="${lW-4}" y="${y+cH*0.72}" text-anchor="end" font-size="8" fill="#b89880" font-family="Segoe UI,Arial,sans-serif">${dagNm[dag]}</text>`;
       for(let w=0;w<weeks;w++){
         const d=new Date(start);d.setDate(start.getDate()+w*7+dag);
         const ds=d.toISOString().slice(0,10);
-        const x=labelW+w*(cellW+cellGap);
+        const x=lW+w*(cW+cG);
         const tr=sData.find(x=>x.datum===ds);
         const tip=tr?`<title>${ds}: ${tr.duur} min — ${tr.type}</title>`:'';
-        svg+=`<rect x="${x}" y="${y}" width="${cellW}" height="${cellH}" rx="3" fill="${skl(ds)}">${tip}</rect>`;
+        svg+=`<rect x="${x}" y="${y}" width="${cW}" height="${cH}" rx="3" fill="${skl(ds)}">${tip}</rect>`;
       }
     }
     svg+='</svg>';
     return svg;
   }
 
-  // Chart.js data als JSON strings voor het rapport
-  const gewLabels=JSON.stringify(gData.map(x=>fmtS(x.datum)));
-  const gewVals=JSON.stringify(gData.map(x=>x.val));
-  const gewMin=gData.length?Math.min(...gData.map(x=>x.val))-1:0;
-  const gewMax=gData.length?Math.max(...gData.map(x=>x.val))+1:10;
+  // Chart data als JSON
+  const gLabels=JSON.stringify(gData.map(x=>fmtS(x.datum)));
+  const gVals=JSON.stringify(gData.map(x=>x.val));
+  const gMin=gData.length?Math.min(...gData.map(x=>x.val))-1:0;
+  const gMax=gData.length?Math.max(...gData.map(x=>x.val))+1.5:10;
 
   const slLabels=JSON.stringify(slData.map(x=>fmtS(x.datum)));
   const slVals=JSON.stringify(slData.map(x=>x.uren));
@@ -2238,11 +2257,9 @@ function exportVolledigRapport(){
 
   const wLabels=JSON.stringify(wData.map(x=>fmtS(x.datum)));
   const wVals=JSON.stringify(wData.map(x=>x.glazen));
-  const wDoel=parseInt(s.waterdoel)||8;
 
   const cLabels=JSON.stringify(colaArr.map(x=>fmtS(x.datum)));
   const cVals=JSON.stringify(colaGlazen);
-  const cDoel=parseInt(s.coladoel)||3;
   const cKleuren=JSON.stringify(colaGlazen.map(v=>v>cDoel?'#7b241c':'#c0392b'));
 
   const html=`<!DOCTYPE html>
@@ -2255,40 +2272,37 @@ function exportVolledigRapport(){
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:11pt;color:#2c1a0e;background:#fdf6ee;padding:28px;}
 .wrap{max-width:760px;margin:0 auto;}
-.header{background:#7a3030;border-radius:12px;padding:20px 26px;margin-bottom:18px;color:#fff;}
-.header-logo{font-size:20pt;font-style:italic;font-weight:700;color:#e8ba76;}
-.header-sub{font-size:9pt;color:rgba(255,255,255,.55);margin:2px 0 14px;}
-.header-meta{display:flex;gap:26px;flex-wrap:wrap;}
-.hmi{font-size:9pt;color:rgba(255,255,255,.6);}
-.hmv{font-size:12pt;font-weight:700;color:#fff;display:block;}
+.header{background:#7a3030;border-radius:14px;padding:18px 24px;margin-bottom:18px;display:flex;align-items:center;gap:16px;color:#fff;}
+.h-icon{font-size:1.6rem;flex-shrink:0}
+.h-main{flex:1}
+.h-naam{font-size:1.35rem;font-weight:700;color:#fff;}
+.h-sub{font-size:.85rem;color:rgba(255,255,255,.6);margin-top:3px;}
+.h-badge{background:#c8954a;color:#fff;border-radius:999px;padding:8px 18px;font-size:.85rem;font-weight:700;white-space:nowrap;flex-shrink:0;}
 .stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:0;}
 .sb{background:#fdf6ee;border-radius:8px;padding:10px 12px;text-align:center;}
-.sn{font-size:18pt;font-weight:700;color:#3d2b1f;}
+.sn{font-size:17pt;font-weight:700;color:#3d2b1f;}
 .sl{font-size:7.5pt;color:#b89880;margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
 .sectie{background:#fff;border-radius:10px;border:1px solid #e8d5be;padding:14px 20px;margin-bottom:14px;}
 .st{font-size:7.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#7a3030;padding-bottom:8px;border-bottom:1px solid #f0e4d4;margin-bottom:12px;}
 .twee{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
 .cw{position:relative;width:100%;height:165px;}
+.as-lbl{font-size:7pt;color:#b89880;margin-top:4px;}
 .leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:8pt;color:#7a5c48;}
 .lsq{width:10px;height:10px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:3px;}
-.klacht-rij{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid #f0e4d4;font-size:10pt;}
-.klacht-rij:last-child{border-bottom:none;}
-.epil{display:inline-block;padding:1px 9px;border-radius:999px;font-size:9pt;font-weight:700;}
 .footer{text-align:center;font-size:8.5pt;color:#b89880;margin-top:16px;padding-top:12px;border-top:1px solid #e8d5be;}
-@media print{body{padding:0;background:#fff;} .wrap{max-width:100%;} .header{-webkit-print-color-adjust:exact;print-color-adjust:exact;} .sb{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+@media print{body{padding:0;background:#fff;} .wrap{max-width:100%;} .header{-webkit-print-color-adjust:exact;print-color-adjust:exact;} .sb,.sectie{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 </style>
 </head>
 <body>
 <div class="wrap">
 
 <div class="header">
-  <div class="header-logo">Mijn Welzijn</div>
-  <div class="header-sub">Persoonlijk gezondheidsrapport</div>
-  <div class="header-meta">
-    <div class="hmi">Naam<span class="hmv">${naam}</span></div>
-    <div class="hmi">Periode<span class="hmv">${fmtD(van)} t/m ${fmtD(tot)}</span></div>
-    <div class="hmi">Gegenereerd<span class="hmv">${nu}</span></div>
+  <div class="h-icon">📋</div>
+  <div class="h-main">
+    <div class="h-naam">${naam}</div>
+    <div class="h-sub">${fmtD(van)} &nbsp;·&nbsp; t/m &nbsp;·&nbsp; ${fmtD(tot)}</div>
   </div>
+  <div class="h-badge">Mijn Welzijn</div>
 </div>
 
 <div class="sectie">
@@ -2303,14 +2317,14 @@ body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:11pt;color:#2c1
 </div>
 
 ${gData.length>0||slData.length>0?`<div class="twee">
-  ${gData.length>0?`<div class="sectie"><div class="st">Gewicht (kg)</div><div class="cw"><canvas id="cGew"></canvas></div></div>`:''}
-  ${slData.length>0?`<div class="sectie"><div class="st">Slaap (uren)</div><div class="cw"><canvas id="cSlaap"></canvas></div></div>`:''}
+  ${gData.length>0?`<div class="sectie"><div class="st">Gewicht</div><div class="cw"><canvas id="cGew"></canvas></div><div class="as-lbl">Y-as in kg</div></div>`:'<div></div>'}
+  ${slData.length>0?`<div class="sectie"><div class="st">Slaap</div><div class="cw"><canvas id="cSlaap"></canvas></div><div class="as-lbl">Y-as in uren</div></div>`:'<div></div>'}
 </div>`:''}
 
 ${sData.length>0?`<div class="sectie">
   <div class="st">Sport &amp; Beweging — ${sData.length} trainingen · ${totMin} min totaal</div>
   <div style="margin-bottom:10px">${sportTagsHtml}</div>
-  ${maakSportHeatmap()}
+  ${maakHeatmapSVG()}
   <div class="leg">
     <span><span class="lsq" style="background:#c8e6c9"></span>Licht &lt;30 min</span>
     <span><span class="lsq" style="background:#66bb6a"></span>Gemiddeld 30–45 min</span>
@@ -2320,55 +2334,47 @@ ${sData.length>0?`<div class="sectie">
 </div>`:''}
 
 ${wData.length>0||colaArr.length>0?`<div class="twee">
-  ${wData.length>0?`<div class="sectie"><div class="st">💧 Water — gem. ${gemWater} glazen/dag</div><div class="cw" style="height:145px"><canvas id="cWater"></canvas></div></div>`:''}
-  ${colaArr.length>0?`<div class="sectie"><div class="st">🥤 Cola — gem. ${gemCola} glazen/dag</div><div class="cw" style="height:145px"><canvas id="cCola"></canvas></div></div>`:''}
+  ${wData.length>0?`<div class="sectie"><div class="st">💧 Water — gem. ${gemWater} glazen/dag</div><div class="cw" style="height:150px"><canvas id="cWater"></canvas></div></div>`:'<div></div>'}
+  ${colaArr.length>0?`<div class="sectie"><div class="st">🥤 Cola — gem. ${gemCola} glazen/dag</div><div class="cw" style="height:150px"><canvas id="cCola"></canvas></div></div>`:'<div></div>'}
 </div>`:''}
 
 ${kData.length>0?`<div class="sectie">
-  <div class="st">Klachten — ${kData.length} geregistreerd</div>
-  ${Object.keys(kt).length>1?`<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid #f0e4d4">
-    ${Object.entries(kt).sort((a,b)=>b[1].count-a[1].count).map(([n,v])=>`
-    <div class="klacht-rij"><span style="font-size:14pt">${v.icon}</span><span style="flex:1">${n}</span>
-    <span style="color:#b89880;font-size:9pt">${v.count}× · gem. ${(v.totErnst/v.count).toFixed(1)}</span></div>`).join('')}
-  </div>`:''}
-  ${kData.map(k=>`<div class="klacht-rij">
-    <span style="font-size:14pt">${k.icon}</span>
-    <span style="flex:1;font-weight:600">${k.klacht}</span>
-    <span style="color:#b89880;font-size:9pt">${fmtD(k.datum)}${k.tijd?' · '+k.tijd:''}</span>
-    <span class="epil" style="background:${ernstK[k.ernst]}18;color:${ernstK[k.ernst]};border:1px solid ${ernstK[k.ernst]}55;margin-left:8px">${ernstL[k.ernst]}</span>
-  </div>`).join('')}
+  <div class="st">Klachten &amp; Symptomen — ${kData.length} geregistreerd</div>
+  ${klachtenPerDagHtml()}
 </div>`:''}
 
 <div class="footer">Mijn Welzijn · Rapport ${fmtD(van)} t/m ${fmtD(tot)} · ${naam} · ${nu}</div>
 </div>
 
 <script>
-function lblPlugin(getClr,suf){return{id:'lbl',afterDatasetsDraw(chart){
-  const ctx=chart.ctx,meta=chart.getDatasetMeta(0);
-  const aL=chart.chartArea.left,aR=chart.chartArea.right,aT=chart.chartArea.top;
-  ctx.save();
-  meta.data.forEach((pt,i)=>{
-    const v=chart.data.datasets[0].data[i];if(v==null)return;
-    const clr=typeof getClr==='function'?getClr(v):getClr;
-    const bx=Math.max(aL+18,Math.min(pt.x,aR-18));
-    const by=Math.max(aT+11,pt.y-9);
-    ctx.font='bold 8.5px Segoe UI';ctx.fillStyle=clr;
-    ctx.textAlign='center';ctx.textBaseline='bottom';
-    ctx.fillText(v+(suf||''),bx,by);
-  });ctx.restore();
-}}}
+function lblPlugin(getClr,suf){
+  return{id:'lbl',afterDatasetsDraw(chart){
+    const ctx=chart.ctx,meta=chart.getDatasetMeta(0);
+    const aL=chart.chartArea.left,aR=chart.chartArea.right,aT=chart.chartArea.top;
+    ctx.save();ctx.font='bold 8.5px Segoe UI';ctx.textAlign='center';ctx.textBaseline='bottom';
+    meta.data.forEach((pt,i)=>{
+      const v=chart.data.datasets[0].data[i];if(v==null)return;
+      const clr=typeof getClr==='function'?getClr(v):getClr;
+      const bx=Math.max(aL+18,Math.min(pt.x,aR-18));
+      const by=Math.max(aT+13,pt.y-8);
+      const t=String(v)+(suf||''),tw=ctx.measureText(t).width;
+      ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillRect(bx-tw/2-2,by-12,tw+4,13);
+      ctx.fillStyle=clr;ctx.fillText(t,bx,by);
+    });ctx.restore();
+  }};
+}
 
-const baseCfg={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},animation:{duration:0},
+const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},animation:{duration:0},
   scales:{x:{grid:{display:false},ticks:{font:{size:8},color:'#b89880',maxRotation:45,autoSkip:true,maxTicksLimit:12}},
     y:{grid:{color:'#f5ede4'},ticks:{font:{size:8},color:'#b89880'}}}};
 
 ${gData.length>0?`
-const gVals=${gewVals};
 new Chart(document.getElementById('cGew'),{type:'line',
-  data:{labels:${gewLabels},datasets:[{data:gVals,borderColor:'#c8954a',borderWidth:2,
+  data:{labels:${gLabels},datasets:[{data:${gVals},borderColor:'#c8954a',borderWidth:2,
     pointBackgroundColor:'#c8954a',pointRadius:5,tension:0.35,fill:true,backgroundColor:'#c8954a14'}]},
-  options:{...baseCfg,scales:{x:baseCfg.scales.x,y:{...baseCfg.scales.y,min:${gewMin},max:${gewMax}}}},
-  plugins:[lblPlugin('#7a3030',' kg')]});`:''}
+  options:{...base,scales:{x:base.scales.x,y:{...base.scales.y,min:${gMin},max:${gMax},
+    ticks:{...base.scales.y.ticks,callback:v=>v+' kg'}}}},
+  plugins:[lblPlugin('#7a3030','')]});`:''}
 
 ${slData.length>0?`
 const slVals=${slVals};
@@ -2376,15 +2382,15 @@ const slKlr=${slKleuren};
 new Chart(document.getElementById('cSlaap'),{type:'line',
   data:{labels:${slLabels},datasets:[{data:slVals,borderColor:'#7a9e7e',borderWidth:2,
     pointBackgroundColor:slKlr,pointRadius:5,tension:0.35,fill:true,backgroundColor:'#7a9e7e14'}]},
-  options:{...baseCfg,scales:{x:baseCfg.scales.x,y:{...baseCfg.scales.y,min:0,max:13}}},
-  plugins:[lblPlugin(v=>v<6?'#e74c3c':v<=8?'#c8954a':'#7a9e7e','u')]});`:''}
+  options:{...base,scales:{x:base.scales.x,y:{...base.scales.y,min:0,max:13,
+    ticks:{...base.scales.y.ticks,callback:v=>v+'u'}}}},
+  plugins:[lblPlugin(v=>v<6?'#e74c3c':v<=8?'#c8954a':'#7a9e7e','')]});`:''}
 
 ${wData.length>0?`
-const wVals=${wVals};
 new Chart(document.getElementById('cWater'),{type:'line',
-  data:{labels:${wLabels},datasets:[{data:wVals,borderColor:'#7a9e7e',borderWidth:2,
+  data:{labels:${wLabels},datasets:[{data:${wVals},borderColor:'#7a9e7e',borderWidth:2,
     pointBackgroundColor:'#7a9e7e',pointRadius:5,tension:0.35,fill:true,backgroundColor:'#7a9e7e14'}]},
-  options:{...baseCfg,scales:{x:baseCfg.scales.x,y:{...baseCfg.scales.y,beginAtZero:true,suggestedMax:${wDoel+2}}}},
+  options:{...base,scales:{x:base.scales.x,y:{...base.scales.y,beginAtZero:true,suggestedMax:${wDoel+2}}}},
   plugins:[lblPlugin('#7a9e7e','')]});`:''}
 
 ${colaArr.length>0?`
@@ -2393,10 +2399,10 @@ const cKlr=${cKleuren};
 new Chart(document.getElementById('cCola'),{type:'line',
   data:{labels:${cLabels},datasets:[{data:cVals,borderColor:'#c0392b',borderWidth:2,
     pointBackgroundColor:cKlr,pointRadius:5,tension:0.35,fill:true,backgroundColor:'#c0392b14'}]},
-  options:{...baseCfg,scales:{x:baseCfg.scales.x,y:{...baseCfg.scales.y,beginAtZero:true,suggestedMax:${cDoel+3}}}},
+  options:{...base,scales:{x:base.scales.x,y:{...base.scales.y,beginAtZero:true,suggestedMax:${cDoel+3}}}},
   plugins:[lblPlugin(v=>v>${cDoel}?'#7b241c':'#c0392b','')]});`:''}
 
-window.onload=()=>setTimeout(()=>window.print(),800);
+window.onload=()=>setTimeout(()=>window.print(),900);
 <\/script>
 </body>
 </html>`;
@@ -2407,7 +2413,6 @@ window.onload=()=>setTimeout(()=>window.print(),800);
   if(!w) showToast('⚠️ Sta pop-ups toe in je browser');
   setTimeout(()=>URL.revokeObjectURL(url),20000);
 }
-
 
 function exportCSV(){
   let csv='Datum,Type,Waarde,Eenheid,Notitie\n';
