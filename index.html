@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -594,6 +595,21 @@ textarea { resize:vertical; min-height:70px; }
 .mm-stat-label { font-size:.68rem; color:var(--text-muted); margin-top:2px; }
 .mm-add-form { background:var(--cream2); border-radius:14px; padding:16px; margin-top:14px; border:1px solid var(--border); display:none; }
 
+/* ===== DRAG & DROP (#28) ===== */
+.drag-handle{cursor:grab;color:var(--border);font-size:1.1rem;padding:2px 4px;user-select:none;line-height:1}
+.drag-handle:hover{color:var(--text-muted)}
+.drag-handle:active{cursor:grabbing}
+.sortable-ghost{opacity:.4;background:var(--gold-pale)!important;border:2px dashed var(--gold)!important}
+.sortable-drag{box-shadow:0 8px 24px rgba(100,60,20,.2)!important;transform:rotate(1deg);}
+.dash-section{transition:transform .2s;}
+
+/* ===== STATISTIEKEN ===== */
+.stat-big-card{background:#fff;border-radius:var(--radius);border:1.5px solid var(--border);padding:18px 20px;}
+.stat-big-val{font-family:var(--font-head);font-size:2rem;font-weight:700;color:var(--text);line-height:1}
+.stat-big-unit{font-size:.9rem;color:var(--text-muted);font-family:var(--font-body)}
+.stat-big-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-top:4px}
+.stat-big-sub{font-size:.75rem;color:var(--text-soft);margin-top:6px;font-style:italic}
+
 /* ===== CHECK-IN (#1) ===== */
 .checkin-card{background:linear-gradient(135deg,#7a3030,#9a4040);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;color:#fff;}
 .checkin-fire{font-size:2rem;flex-shrink:0}
@@ -871,6 +887,9 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <button class="nav-item" onclick="switchTab('uitdagingen')">
       <span class="nav-icon">⚡</span><span class="nav-label">Uitdagingen</span>
     </button>
+    <button class="nav-item" onclick="switchTab('statistieken')">
+      <span class="nav-icon">📊</span><span class="nav-label">Statistieken</span>
+    </button>
     <button class="nav-item" onclick="switchTab('instellingen')">
       <span class="nav-icon">⚙️</span><span class="nav-label">Instellingen</span>
     </button>
@@ -884,7 +903,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
   <div class="sidebar-footer">
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v1.9.0</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v2.0.0</div>
   </div>
 </aside>
 
@@ -1133,7 +1152,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
     </div>
 
     <!-- Row 4: mijlpalen tijdlijn full width -->
-    <div class="gap-section" style="display:grid;grid-template-columns:1fr;gap:16px">
+    <div class="gap-section" id="dash-sec-mijlpalen" style="display:grid;grid-template-columns:1fr;gap:16px">
       <div class="card" id="dash-mijlpalen">
         <div class="card-label" style="margin-bottom:14px">Mijlpalen tijdlijn</div>
         <div class="timeline-wrap">
@@ -1495,6 +1514,15 @@ html.dark .mob-sheet{background:var(--card-bg);}
     </div>
   </div>
 
+  <!-- ===== STATISTIEKEN ===== -->
+  <div class="view" id="view-statistieken">
+    <div class="page-header">
+      <div><div class="page-title">📊 <em>Statistieken</em></div><div class="page-subtitle">Jouw volledige cijfers in één overzicht</div></div>
+    </div>
+    <div id="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:20px"></div>
+    <div class="grid-2 gap-section" id="stats-details"></div>
+  </div>
+
   <!-- ===== INSTELLINGEN ===== -->
   <div class="view" id="view-instellingen">
     <div class="page-header">
@@ -1772,6 +1800,9 @@ html.dark .mob-sheet{background:var(--card-bg);}
   <div class="mob-more-btn" onclick="switchTab('uitdagingen');closeMobSheets()">
     <div class="mob-more-icon">⚡</div><span>Uitdagingen</span>
   </div>
+  <div class="mob-more-btn" onclick="switchTab('statistieken');closeMobSheets()">
+    <div class="mob-more-icon">📊</div><span>Statistieken</span>
+  </div>
   <div class="mob-more-btn" onclick="switchTab('instellingen');closeMobSheets()">
     <div class="mob-more-icon">⚙️</div><span>Instellingen</span>
   </div>
@@ -1812,7 +1843,7 @@ function thisWeekDays(){
 
 // ===== NAV =====
 function switchTab(tab){
-  const tabs=['dashboard','gewicht','sport','water','slaap','prestaties','uitdagingen','instellingen'];
+  const tabs=['dashboard','gewicht','sport','water','slaap','prestaties','uitdagingen','statistieken','instellingen'];
   document.querySelectorAll('.nav-item').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const view=document.getElementById('view-'+tab);
@@ -1832,6 +1863,7 @@ function switchTab(tab){
   if(tab==='slaap') renderSlaap();
   if(tab==='prestaties') renderPrestaties();
   if(tab==='uitdagingen') renderUitdagingen();
+  if(tab==='statistieken') renderStatistieken();
   if(tab==='instellingen') renderSettings();
   // Mobiele nav bijwerken
   const mobTabs=['dashboard','gewicht','sport','water'];
@@ -2737,6 +2769,160 @@ function checkHerhaling(){
     qSelectedSport=match.sport;
     showToast(`🔄 Terugkerende training: ${match.sport} ${match.duur} min — alvast ingevuld!`);
   },1200);
+}
+
+// ===== STATISTIEKEN TAB (#37) =====
+function renderStatistieken(){
+  const gData=load(KEYS.gewicht);
+  const sData=load(KEYS.sport);
+  const wData=load(KEYS.water);
+  const slData=load(KEYS.slaap);
+  const settings=loadSettings();
+  const checkin=loadCheckin();
+  const{xp}=berekenXP();
+  const level=getLevel(xp);
+
+  // Bereken stats
+  const totaalSportMin=sData.reduce((a,x)=>a+x.duur,0);
+  const totaalSportUur=Math.floor(totaalSportMin/60);
+  const restMin=totaalSportMin%60;
+
+  const sportTypes={};
+  sData.forEach(x=>{sportTypes[x.sport]=(sportTypes[x.sport]||0)+1;});
+  const favSport=Object.entries(sportTypes).sort((a,b)=>b[1]-a[1])[0];
+
+  const startGew=settings.startgewicht||(gData.length>0?Math.max(...gData.map(x=>x.val)):null);
+  const latest=gData.length>0?gData[gData.length-1].val:null;
+  const totaalAf=startGew&&latest?Math.max(0,startGew-latest):0;
+
+  const totaalGlazen=wData.reduce((a,x)=>a+x.glazen,0);
+  const gemSlaap=slData.length?Math.round(slData.reduce((a,x)=>a+x.uren,0)/slData.length*10)/10:0;
+  const besteSlaap=slData.length?Math.max(...slData.map(x=>x.uren)):0;
+  const eersteMeting=gData.length?gData[0].datum:null;
+  const dagsSindsStart=eersteMeting?Math.round((new Date()-new Date(eersteMeting))/(86400000)):0;
+
+  const doel=parseInt(settings.waterdoel)||8;
+  const waterDoelenGehaald=wData.filter(x=>x.glazen>=doel).length;
+  const sportDezeM=sData.filter(x=>x.datum.startsWith(new Date().toISOString().slice(0,7))).length;
+
+  const cards=[
+    {val:totaalAf.toFixed(1),unit:'kg',label:'Totaal afgevallen',sub:startGew?`Van ${startGew} naar ${latest} kg`:''},
+    {val:totaalSportUur,unit:`u ${restMin}min`,label:'Totale sporttijd',sub:`${sData.length} trainingen`},
+    {val:favSport?favSport[0]:'—',unit:'',label:'Favoriete sport',sub:favSport?`${favSport[1]}x gedaan`:''},
+    {val:gData.length,unit:'',label:'Gewichtsmetingen',sub:eersteMeting?`Sinds ${fmtDate(eersteMeting)}`:''},
+    {val:totaalGlazen,unit:'glazen',label:'Totaal water gedronken',sub:`${waterDoelenGehaald}× waterdoel gehaald`},
+    {val:gemSlaap,unit:'uur',label:'Gemiddelde slaap',sub:`Beste nacht: ${besteSlaap}u`},
+    {val:checkin.best,unit:'dagen',label:'Beste check-in streak',sub:`Huidige streak: ${checkin.streak} dagen`},
+    {val:xp,unit:'XP',label:'Totaal verdiende XP',sub:`Level ${level} — ${LEVEL_TITLES[level]}`},
+    {val:dagsSindsStart,unit:'dagen',label:'Dagen op weg',sub:eersteMeting?`Gestart op ${fmtDate(eersteMeting)}`:''},
+    {val:sportDezeM,unit:'',label:'Trainingen deze maand',sub:''},
+  ];
+
+  const grid=document.getElementById('stats-grid');
+  if(grid) grid.innerHTML=cards.map(c=>`
+    <div class="stat-big-card">
+      <div><span class="stat-big-val">${c.val}</span>${c.unit?`<span class="stat-big-unit"> ${c.unit}</span>`:''}</div>
+      <div class="stat-big-label">${c.label}</div>
+      ${c.sub?`<div class="stat-big-sub">${c.sub}</div>`:''}
+    </div>`).join('');
+
+  // Sport verdeling
+  const details=document.getElementById('stats-details');
+  if(details&&Object.keys(sportTypes).length){
+    const total=sData.length;
+    const sportBars=Object.entries(sportTypes).sort((a,b)=>b[1]-a[1]).map(([sport,count])=>{
+      const pct=Math.round(count/total*100);
+      const icons={'Hardlopen':'🏃','Fietsen':'🚴','Zwemmen':'🏊','Krachttraining':'💪','Wandelen':'🚶','Schaatsen':'⛸️','Anders':'✨'};
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">
+        <div style="width:24px;text-align:center">${icons[sport]||'🏃'}</div>
+        <div style="flex:1;font-size:.85rem;color:var(--text)">${sport}</div>
+        <div style="width:120px;height:8px;background:var(--parchment);border-radius:999px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:var(--rose);border-radius:999px"></div>
+        </div>
+        <div style="font-size:.78rem;color:var(--text-muted);min-width:40px;text-align:right">${count}× <span style="color:var(--text-soft)">${pct}%</span></div>
+      </div>`;
+    }).join('');
+
+    details.innerHTML=`
+      <div class="card">
+        <div class="card-label" style="margin-bottom:12px">Sport verdeling</div>
+        ${sportBars}
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:12px">Slaap distributie</div>
+        ${[['Kort (<6u)',slData.filter(x=>x.uren<6).length,'var(--rose)'],
+           ['Prima (6-8u)',slData.filter(x=>x.uren>=6&&x.uren<=8).length,'var(--gold)'],
+           ['Lang (>8u)',slData.filter(x=>x.uren>8).length,'var(--sage)']].map(([lbl,cnt,klr])=>{
+          const pct=slData.length?Math.round(cnt/slData.length*100):0;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">
+            <div style="flex:1;font-size:.85rem;color:var(--text)">${lbl}</div>
+            <div style="width:120px;height:8px;background:var(--parchment);border-radius:999px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${klr};border-radius:999px"></div>
+            </div>
+            <div style="font-size:.78rem;color:var(--text-muted);min-width:40px;text-align:right">${cnt}× <span style="color:var(--text-soft)">${pct}%</span></div>
+          </div>`;}).join('')}
+      </div>`;
+  }
+}
+
+// ===== DRAG & DROP DASHBOARD (#28) =====
+let dashSortable=null;
+function initDashDragDrop(){
+  const content=document.querySelector('#view-dashboard');
+  if(!content||typeof Sortable==='undefined') return;
+
+  // Voeg drag handles toe aan alle gap-section cards
+  const sections=content.querySelectorAll('.gap-section');
+  sections.forEach((sec,i)=>{
+    if(!sec.id) sec.id='dash-sec-'+i;
+    sec.classList.add('dash-section');
+    // Voeg handle toe aan eerste card-head-row of maak er één aan
+    const headRow=sec.querySelector('.card-head-row,.card-label');
+    if(headRow&&!headRow.querySelector('.drag-handle')){
+      const handle=document.createElement('span');
+      handle.className='drag-handle';
+      handle.title='Versleep om te herordenen';
+      handle.innerHTML='⠿';
+      handle.style.cssText='position:absolute;right:8px;top:8px;';
+      const card=sec.querySelector('.card');
+      if(card){card.style.position='relative';card.appendChild(handle);}
+    }
+  });
+
+  // Sortable op de view-dashboard container
+  if(dashSortable) dashSortable.destroy();
+  dashSortable=new Sortable(content,{
+    animation:180,
+    handle:'.drag-handle',
+    ghostClass:'sortable-ghost',
+    dragClass:'sortable-drag',
+    filter:'.page-header',
+    draggable:'.gap-section',
+    onEnd:saveDashOrder
+  });
+
+  // Herstel opgeslagen volgorde
+  restoreDashOrder();
+}
+
+function saveDashOrder(){
+  const content=document.querySelector('#view-dashboard');
+  if(!content) return;
+  const order=[...content.querySelectorAll('.gap-section')].map(s=>s.id);
+  localStorage.setItem('tracker_dash_order',JSON.stringify(order));
+}
+
+function restoreDashOrder(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('tracker_dash_order')||'[]');
+    if(!saved.length) return;
+    const content=document.querySelector('#view-dashboard');
+    if(!content) return;
+    saved.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) content.appendChild(el);
+    });
+  }catch(e){}
 }
 
 // ===== DAGELIJKSE CHECK-IN (#1) =====
@@ -4283,6 +4469,7 @@ async function init(){
   applyDarkMode();
   applyCompact();
   setupPWA();
+  setTimeout(initDashDragDrop, 500);
 
   // Laad-overlay tonen
   const overlay=document.getElementById('init-overlay');
