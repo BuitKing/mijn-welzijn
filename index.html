@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mijn Welzijn">
@@ -65,121 +65,174 @@ html.dark .cup { background:var(--parchment); border-color:var(--border); }
 .mob-sheet{display:none;}
 
 @media(max-width:768px){
+  /* ── Layout ── */
   .sidebar{display:none!important;}
   .app{flex-direction:column;}
-  .content{padding:14px 12px 90px;width:100%;}
+  .content{
+    padding:12px 12px calc(env(safe-area-inset-bottom,0px) + 80px);
+    width:100%;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:none;
+  }
 
-  /* Stat cards: 2x2 */
-  #dash-stat-row{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;}
-  #stat-bmi{display:none;} /* verberg BMI stat op mobiel */
+  /* ── Stat cards: 2x2 ── */
+  #dash-stat-row{grid-template-columns:repeat(2,1fr)!important;gap:8px!important;}
+  #stat-bmi{display:none;}
 
-  /* Grids: 1 kolom */
+  /* ── Alle grids: 1 kolom ── */
   .grid-2,.grid-3{grid-template-columns:1fr!important;}
   #dash-row2,#dash-row3{grid-template-columns:1fr!important;}
   #dash-streaks{grid-template-columns:1fr 1fr!important;}
-
-  /* Weekdoel+BMI rij */
   #dash-weekdoel,#dash-bmi-card{min-width:0;}
 
-  /* Charts iets kleiner */
-  .chart-wrap.tall{height:180px!important;}
+  /* ── Charts ── */
+  .chart-wrap.tall{height:200px!important;}
+  .chart-wrap{height:160px!important;}
 
-  /* Page header compacter */
-  .page-header{flex-direction:column;gap:10px;padding-bottom:14px;}
+  /* ── Page header ── */
+  .page-header{flex-direction:column;gap:8px;padding-bottom:12px;margin-bottom:12px;}
   .page-header .quote-banner{display:none;}
-  .page-title{font-size:1.4rem!important;}
+  .page-title{font-size:1.35rem!important;}
+  .page-subtitle{font-size:.78rem!important;}
+  #sync-now-btn{display:none;}
 
-  /* Kaartjes minder padding */
-  .card{padding:14px 16px;}
-  .stat-card{padding:12px 14px;}
+  /* ── Kaartjes ── */
+  .card{padding:12px 14px;border-radius:14px;}
+  .stat-card{padding:10px 12px;}
+  .stat-val{font-size:1.6rem!important;}
+  .stat-icon{font-size:1.2rem!important;}
+  .gap-section{margin-bottom:12px!important;}
 
-  /* Instellingen: 1 kolom */
+  /* ── Formulieren ── */
+  input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{
+    font-size:16px!important; /* voorkomt zoom op iOS */
+    min-height:44px;
+  }
+  .btn{min-height:44px;font-size:.9rem;}
+  label{font-size:.8rem!important;}
+
+  /* ── Instellingen: 1 kolom ── */
   #view-instellingen .grid-2{grid-template-columns:1fr!important;}
 
-  /* Mobiele navigatie balk */
+  /* ── Klacht pills ── */
+  .klacht-pill,.ernst-pill{font-size:.75rem!important;padding:6px 12px!important;}
+
+  /* ── Log lijsten ── */
+  .log-list{max-height:320px!important;}
+
+  /* ── Heatmap ── */
+  .heatmap-outer{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* ── Water cups ── */
+  .water-cups{gap:4px!important;}
+  .cup{width:34px!important;height:42px!important;}
+
+  /* ── Meldingen rij ── */
+  #meldingen-rij{flex-direction:column!important;}
+
+  /* ── Mobiele navigatie ── */
   .mobile-nav{
     display:flex;
     position:fixed;
     bottom:0;left:0;right:0;
     background:#7a3030;
     z-index:999;
-    padding-bottom:env(safe-area-inset-bottom,0);
+    padding-bottom:env(safe-area-inset-bottom,0px);
     border-top:1px solid rgba(255,255,255,.1);
-  }
-  .mob-nav-btn{
-    flex:1;
-    background:none;
-    border:none;
-    padding:8px 4px 10px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:2px;
-    cursor:pointer;
     -webkit-tap-highlight-color:transparent;
   }
-  .mob-nav-icon{font-size:18px;}
-  .mob-nav-label{font-size:9px;color:rgba(255,255,255,.55);letter-spacing:.02em;}
-  .mob-nav-btn.active .mob-nav-label{color:rgba(255,255,255,.95);}
-  .mob-nav-btn.active{background:rgba(255,255,255,.1);}
-
-  /* FAB */
-  .fab-btn{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:fixed;
-    bottom:74px;right:18px;
-    width:52px;height:52px;
-    border-radius:50%;
-    background:#7a3030;
-    color:#fff;
-    font-size:26px;
-    font-weight:300;
-    border:none;
+  .mob-nav-btn{
+    flex:1;background:none;border:none;
+    padding:8px 2px 10px;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
     cursor:pointer;
-    z-index:998;
-    box-shadow:0 4px 16px rgba(122,48,48,.4);
-    transition:transform .2s,background .2s;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    min-width:0;
   }
-  .fab-btn.open{transform:rotate(45deg);background:#c47a7a;}
+  .mob-nav-icon{font-size:20px;line-height:1;}
+  .mob-nav-label{font-size:8.5px;color:rgba(255,255,255,.55);letter-spacing:.01em;white-space:nowrap;}
+  .mob-nav-btn.active .mob-nav-label{color:#fff;}
+  .mob-nav-btn.active{background:rgba(255,255,255,.12);}
+  .mob-nav-btn.active::after{content:'';display:block;width:3px;height:3px;border-radius:50%;background:#c8954a;margin-top:1px;}
 
-  /* Overlay */
+  /* ── FAB ── */
+  .fab-btn{
+    display:flex;align-items:center;justify-content:center;
+    position:fixed;bottom:70px;right:16px;
+    width:54px;height:54px;border-radius:50%;
+    background:#7a3030;color:#fff;
+    font-size:28px;font-weight:300;border:none;
+    cursor:pointer;z-index:998;
+    box-shadow:0 4px 20px rgba(122,48,48,.45);
+    transition:transform .2s,background .2s;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fab-btn.open{transform:rotate(45deg);background:#9a4040;}
+
+  /* ── Overlay ── */
   .mob-overlay{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.4);
-    z-index:1000;
+    display:none;position:fixed;inset:0;
+    background:rgba(0,0,0,.45);z-index:1000;
   }
   .mob-overlay.visible{display:block;}
 
-  /* Bottom sheet */
+  /* ── Bottom sheet ── */
   .mob-sheet{
-    display:block;
-    position:fixed;
-    bottom:-100%;
-    left:0;right:0;
-    background:#fff;
-    border-radius:20px 20px 0 0;
-    padding:14px 20px 24px;
+    display:block;position:fixed;
+    bottom:-100%;left:0;right:0;
+    background:var(--cream);
+    border-radius:22px 22px 0 0;
+    padding:14px 20px calc(env(safe-area-inset-bottom,0px) + 28px);
     z-index:1001;
-    transition:bottom .3s ease;
-    box-shadow:0 -4px 24px rgba(0,0,0,.12);
+    transition:bottom .28s cubic-bezier(.4,0,.2,1);
+    max-height:88vh;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
   }
   .mob-sheet.open{bottom:0;}
-  .mob-sheet-handle{width:40px;height:4px;background:var(--border);border-radius:999px;margin:0 auto 14px;}
-  .mob-sheet-title{font-family:var(--font-head);font-size:1.1rem;color:var(--text);margin-bottom:14px;}
-  .mob-sheet-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
-  .mob-tab{padding:6px 12px;border-radius:999px;border:1.5px solid var(--border);background:var(--cream2);color:var(--text-muted);font-size:.78rem;cursor:pointer;font-family:var(--font-body);}
+  .mob-handle{width:36px;height:4px;background:var(--border);border-radius:999px;margin:0 auto 14px;}
+  .mob-sheet-title{font-family:var(--font-head);font-size:1rem;color:var(--text);margin-bottom:14px;}
+  .mob-sheet-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .mob-tab{padding:7px 14px;border-radius:999px;border:1.5px solid var(--border);background:var(--cream2);color:var(--text-muted);font-size:.8rem;cursor:pointer;font-family:var(--font-body);min-height:36px;}
   .mob-tab.active{background:var(--gold-pale);border-color:var(--gold);color:var(--gold);}
   .fab-panel{display:flex;flex-direction:column;gap:10px;}
-  .mob-input{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;font-size:15px;background:var(--cream2);color:var(--text);font-family:var(--font-body);}
-  .mob-save-btn{width:100%;background:#7a3030;color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;cursor:pointer;font-family:var(--font-body);margin-top:4px;}
-  .mob-sport-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
-  .mob-sport-pill{width:42px;height:42px;border-radius:10px;border:1.5px solid var(--border);background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;}
+  .mob-input{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:13px 14px;font-size:16px;background:var(--cream2);color:var(--text);font-family:var(--font-body);}
+  .mob-save-btn{width:100%;background:#7a3030;color:#fff;border:none;border-radius:14px;padding:15px;font-size:16px;cursor:pointer;font-family:var(--font-body);margin-top:6px;min-height:50px;touch-action:manipulation;}
+  .mob-sport-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+  .mob-sport-pill{width:46px;height:46px;border-radius:12px;border:1.5px solid var(--border);background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;touch-action:manipulation;}
   .mob-sport-pill.selected{background:var(--gold-pale);border-color:var(--gold);}
+  .mob-more-btn{min-height:50px;font-size:1rem!important;}
+  .mob-more-icon{font-size:1.4rem!important;}
+
+  /* ── Pincode scherm ── */
+  .pin-btn{width:76px!important;height:76px!important;font-size:1.8rem!important;touch-action:manipulation;}
+
+  /* ── Badges ── */
+  .badge-item{padding:14px 10px!important;}
+  .badge-emoji{font-size:2rem!important;}
+
+  /* ── Rapport rapport ── */
+  #view-rapport .input-row{flex-direction:column!important;}
+
+  /* ── Prestaties heatmap ── */
+  .hm-grid{gap:2px!important;}
 }
+
+/* Extra small screens */
+@media(max-width:380px){
+  .mob-nav-label{font-size:7.5px;}
+  .card{padding:10px 12px;}
+  .stat-val{font-size:1.4rem!important;}
+  .pin-btn{width:68px!important;height:68px!important;font-size:1.6rem!important;}
+}
+
+/* ===== TOUCH OPTIMALISATIES ===== */
+*{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;}
+button,a,[onclick]{touch-action:manipulation;}
+input,select,textarea{-webkit-appearance:none;border-radius:0;}
+:focus{outline:none;}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
 
 /* ===== DARK MODE TOGGLE ===== */
 .dark-toggle {
@@ -3982,6 +4035,17 @@ function restoreDashOrder(){
 
 // ===== PATCHNOTES =====
 const PATCHNOTES=[
+  {versie:'v2.9.1',datum:'2 april 2026',items:[
+    'Volledige mobiele optimalisatie — alle elementen geoptimaliseerd voor telefoon',
+    'iOS zoom fix — invoervelden gebruiken font-size 16px, geen automatische zoom meer',
+    'Safe area insets — content loopt niet achter thuisbalk op iPhone',
+    'Touch targets — knoppen, nav en FAB minimaal 44px voor makkelijker tikken',
+    'Smooth scrolling en overscroll gedrag verbeterd op mobiel',
+    'Extra small screens — aparte stijlen voor schermen smaller dan 380px',
+    'Viewport-fit cover — volledig scherm benutting op moderne iPhones',
+    'Tap highlight verwijderd — geen blauwe flash bij tikken op knoppen',
+    'Bottom sheet met safe area padding — sluit niet achter thuisbalk',
+  ]},
   {versie:'v2.9.0',datum:'2 april 2026',items:[
     'Pincode beveiliging — pincode invoeren bij eerste gebruik, daarna onthouden op apparaat',
   ]},
