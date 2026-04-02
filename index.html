@@ -3301,9 +3301,6 @@ function renderMeldingenRij(){
     (inactiefHtml?`<div style="flex:1;min-width:${beiden?'280px':'100%'}">${inactiefHtml}</div>`:'');
 }
 
-// Wrappers voor compat
-function renderInactiefAlarm(){renderMeldingenRij();}
-function renderCheckin(){renderMeldingenRij();}
 
 // ===== PWA SETUP (#32) =====
 function setupPWA(){
@@ -4605,10 +4602,7 @@ function renderDashboard(){
 
   document.getElementById('streak-water').textContent=calcWaterStreak();
   document.getElementById('streak-sport').textContent=calcSportStreak();
-  window._checkinHtml='';
-  window._inactiefHtml='';
-  renderInactiefAlarm();
-  renderCheckin(); // renderCheckin calls renderMeldingenRij at end
+  renderMeldingenRij();
   renderBMI(latest);
   renderVoortgang();
   renderMijlpalen();
