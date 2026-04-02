@@ -624,6 +624,9 @@ textarea { resize:vertical; min-height:70px; }
 .cup.cola-empty{background:var(--rose-pale);border-color:var(--rose-light);}
 .cup.cola-full{background:#c0392b;border-color:#922b21;}
 .cup.cola-full::after{content:'';display:block;width:40%;height:25%;background:rgba(255,255,255,.25);border-radius:2px;margin:4px auto 0;}
+.cup.cola-over{background:#7b241c;border-color:#512516;animation:colaWarn .6s ease infinite alternate;}
+.cup.cola-over::after{content:'!';display:flex;align-items:center;justify-content:center;color:rgba(255,100,80,.9);font-size:.75rem;font-weight:900;height:100%;}
+@keyframes colaWarn{from{box-shadow:0 0 0 0 rgba(192,57,43,0);}to{box-shadow:0 0 0 4px rgba(192,57,43,.35);}}
 
 /* ===== COMPACT MODUS (#34) ===== */
 @media(max-width:768px){
@@ -1163,13 +1166,13 @@ html.dark .mob-sheet{background:var(--card-bg);}
         </div>
         <button class="btn sage" onclick="quickAddWater()" style="width:100%;padding:7px;margin-bottom:12px">＋ Glas water</button>
 
-        <!-- Cola blikjes -->
+        <!-- Cola glazen -->
         <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#c0392b;margin-bottom:4px">🥤 Cola</div>
         <div class="water-cups" id="dash-cola-cups" style="gap:5px"></div>
         <div class="progress-bar" style="background:#fde8e8;margin-bottom:10px">
           <div class="progress-fill" id="dash-cola-progress" style="width:0%;background:linear-gradient(90deg,#c0392b,#e74c3c)"></div>
         </div>
-        <button class="btn" onclick="quickAddCola()" style="width:100%;padding:7px;background:var(--rose-pale);color:var(--rose);border-color:var(--rose-light)">＋ Blikje cola</button>
+        <button class="btn" onclick="quickAddCola()" style="width:100%;padding:7px;background:var(--rose-pale);color:var(--rose);border-color:var(--rose-light)">＋ Glas cola</button>
       </div>
     </div>
 
@@ -1364,7 +1367,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
             <div class="card-label">🥤 Cola vandaag</div>
             <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
               <div class="card-value" id="cola-val" style="color:#c0392b">0</div>
-              <div class="card-unit">/ <span id="cola-doel-display">3</span> blikjes</div>
+              <div class="card-unit">/ <span id="cola-doel-display">3</span> glazen</div>
             </div>
           </div>
           <div id="cola-badge" class="badge badge-neutral">0%</div>
@@ -1373,7 +1376,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
         <div class="progress-bar" style="background:#fde8e8">
           <div class="progress-fill" id="cola-progress" style="width:0%;background:linear-gradient(90deg,#c0392b,#e74c3c)"></div>
         </div>
-        <div style="font-size:.78rem;color:var(--text-muted);font-style:italic;margin-top:6px;margin-bottom:16px">Tik een blikje aan · max doel: <strong id="cola-doel-text">3</strong> blikjes</div>
+        <div style="font-size:.78rem;color:var(--text-muted);font-style:italic;margin-top:6px;margin-bottom:16px">Tik een glas aan · max doel: <strong id="cola-doel-text">3</strong> glazen</div>
         <button class="btn secondary" onclick="resetCola()" style="width:100%">↺ Reset vandaag</button>
       </div>
     </div>
@@ -1613,7 +1616,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
               <input type="number" id="set-sportdoel" placeholder="3" min="1" max="14">
             </div>
             <div class="input-group">
-              <label>Cola dagdoel (max blikjes/dag)</label>
+              <label>Cola dagdoel (max glazen/dag)</label>
               <input type="number" id="set-coladoel" placeholder="3" min="1" max="10">
             </div>
             <div class="input-group">
@@ -2181,16 +2184,25 @@ function renderSport(){
 
 // ===== COLA =====
 const KEYS_COLA='tracker_cola';
-function getColaToday(){const e=JSON.parse(localStorage.getItem(KEYS_COLA)||'[]').find(x=>x.datum===todayStr());return e?e.blikjes:0;}
-function setColaToday(n){const d=JSON.parse(localStorage.getItem(KEYS_COLA)||'[]').filter(x=>x.datum!==todayStr());d.push({datum:todayStr(),blikjes:n});localStorage.setItem(KEYS_COLA,JSON.stringify(d));}
+function getColaToday(){const e=JSON.parse(localStorage.getItem(KEYS_COLA)||'[]').find(x=>x.datum===todayStr());return e?e.glazen:0;}
+function setColaToday(n){const d=JSON.parse(localStorage.getItem(KEYS_COLA)||'[]').filter(x=>x.datum!==todayStr());d.push({datum:todayStr(),glazen:n});localStorage.setItem(KEYS_COLA,JSON.stringify(d));}
 
 function renderColaCups(cid,filled,doel,interactive){
   const el=document.getElementById(cid);
   if(!el) return;
+  const settings=loadSettings();
+  const max=parseInt(settings.coladoel)||3;
+  // Toon altijd minimaal het doel, plus extra voor over-doel glazen
+  const total=Math.max(max,filled);
   let h='';
-  for(let i=0;i<doel;i++){
-    const f=i<filled;
-    h+=`<div class="cup ${f?'cola-full':'cola-empty'}" ${interactive?`onclick="toggleCola(${i+1})" style="cursor:pointer"`:''}></div>`;
+  for(let i=0;i<total;i++){
+    const isOver=i>=max; // voorbij het dagdoel
+    const isFilled=i<filled;
+    let cls='cola-empty';
+    if(isFilled&&isOver) cls='cola-over';
+    else if(isFilled) cls='cola-full';
+    const title=isOver?`Glas ${i+1} — over je dagdoel!`:`Glas ${i+1}`;
+    h+=`<div class="cup ${cls}" title="${title}" ${interactive?`onclick="toggleCola(${i+1})" style="cursor:pointer"`:''}></div>`;
   }
   el.innerHTML=h;
 }
@@ -2198,17 +2210,26 @@ function renderColaCups(cid,filled,doel,interactive){
 function toggleCola(idx){
   const doel=parseInt(loadSettings().coladoel)||3;
   const cur=getColaToday();
-  setColaToday(Math.max(0,Math.min(idx<=cur?idx-1:idx,doel)));
+  const nieuw=Math.max(0,idx<=cur?idx-1:idx);
+  setColaToday(nieuw);
+  if(nieuw>doel) showToast('⚠️ '+nieuw+' glazen — '+Math.abs(nieuw-doel)+' over je dagdoel!');
   renderDashboard();renderWater();triggerAutoSync();
 }
 
 function quickAddCola(){
   const doel=parseInt(loadSettings().coladoel)||3;
   const cur=getColaToday();
-  setColaToday(Math.min(cur+1,doel+3)); // max 3 boven doel
+  const nieuw=cur+1;
+  setColaToday(nieuw);
   flashStat('stat-water');renderDashboard();
-  showToast('🥤 Cola bijgehouden! ('+getColaToday()+' blikjes)');
-  haptic([30,20,30]);triggerAutoSync();
+  if(nieuw>doel){
+    showToast('⚠️ '+nieuw+' glazen cola — '+Math.abs(nieuw-doel)+' over je dagdoel van '+doel+'!');
+    haptic([50,50,50,50,100]);
+  } else {
+    showToast('🥤 Cola bijgehouden! ('+nieuw+' / '+doel+' glazen)');
+    haptic([30,20,30]);
+  }
+  triggerAutoSync();
 }
 
 function resetCola(){setColaToday(0);renderWater();renderDashboard();}
@@ -2219,7 +2240,7 @@ function renderColaChart(){
   if(!el) return;
   const colaData=JSON.parse(localStorage.getItem(KEYS_COLA)||'[]');
   const days=last7Days();
-  const counts=days.map(d=>{const e=colaData.find(x=>x.datum===d);return e?e.blikjes:0;});
+  const counts=days.map(d=>{const e=colaData.find(x=>x.datum===d);return e?e.glazen:0;});
   const ctx=el.getContext('2d'),cfg=chartDefaults();
   const doel=parseInt(loadSettings().coladoel)||3;
   charts['colaChart']=new Chart(ctx,{type:'bar',
@@ -2263,7 +2284,7 @@ function renderWater(){
   const colaPct=Math.min(100,Math.round(colaFilled/coladoel*100));
   const colaProg=document.getElementById('cola-progress');if(colaProg)colaProg.style.width=colaPct+'%';
   const colaBadge=document.getElementById('cola-badge');
-  if(colaBadge){colaBadge.textContent=colaFilled+' blikjes';colaBadge.className='badge '+(colaFilled===0?'badge-good':colaFilled<=coladoel?'badge-gold':'badge-bad');}
+  if(colaBadge){colaBadge.textContent=colaFilled+' glazen';colaBadge.className='badge '+(colaFilled===0?'badge-good':colaFilled<=coladoel?'badge-gold':'badge-bad');}
   renderColaCups('cola-cups',colaFilled,colaMax,true);
 
   destroyChart('waterChart');
@@ -3084,7 +3105,7 @@ function restoreDashOrder(){
 // ===== PATCHNOTES =====
 const PATCHNOTES=[
   {versie:'v2.1.0',datum:'2 april 2026',items:[
-    'Cola tracker toegevoegd naast water — blikjes bijhouden met eigen grafiek',
+    'Cola tracker toegevoegd naast water — glazen bijhouden met eigen grafiek',
     'Water tab hernoemd naar Drinken met water + cola grafieken naast elkaar',
     'Dashboard water kaart hernoemd naar Drinken met cola sectie',
     'Cola dagdoel instellen in Instellingen',
