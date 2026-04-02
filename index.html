@@ -589,6 +589,95 @@ textarea { resize:vertical; min-height:70px; }
 .mm-stat-label { font-size:.68rem; color:var(--text-muted); margin-top:2px; }
 .mm-add-form { background:var(--cream2); border-radius:14px; padding:16px; margin-top:14px; border:1px solid var(--border); display:none; }
 
+/* ===== COMPACT MODUS (#34) ===== */
+@media(max-width:768px){
+  html.compact .card{padding:10px 12px!important;}
+  html.compact .stat-card{padding:8px 10px!important;}
+  html.compact .stat-val{font-size:1.4rem!important;}
+  html.compact .stat-icon{font-size:1.1rem!important;}
+  html.compact .gap-section{margin-bottom:10px!important;}
+  html.compact #dash-stat-row{gap:6px!important;}
+  html.compact #dash-row2,html.compact #dash-row3{gap:10px!important;}
+  html.compact .streak-card{padding:10px 12px!important;}
+  html.compact .card-label{font-size:.7rem!important;}
+}
+
+/* ===== XP FLOAT ANIMATIE (#3) ===== */
+.xp-float{
+  position:fixed;
+  font-size:.85rem;font-weight:700;
+  color:var(--gold);
+  background:var(--gold-pale);
+  border:1.5px solid var(--gold-light);
+  border-radius:999px;
+  padding:4px 12px;
+  pointer-events:none;
+  z-index:9999;
+  animation:xpFloat 1.6s ease-out forwards;
+}
+@keyframes xpFloat{
+  0%{opacity:1;transform:translateY(0) scale(1);}
+  30%{opacity:1;transform:translateY(-20px) scale(1.1);}
+  100%{opacity:0;transform:translateY(-60px) scale(0.9);}
+}
+
+/* ===== LEVEL-UP OVERLAY (#4) ===== */
+.levelup-overlay{
+  position:fixed;inset:0;
+  background:rgba(122,48,48,.92);
+  z-index:9998;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:0;
+  animation:lvlFadeIn .4s ease;
+}
+@keyframes lvlFadeIn{from{opacity:0;}to{opacity:1;}}
+.levelup-rings{position:relative;width:180px;height:180px;margin-bottom:24px;}
+.levelup-ring{
+  position:absolute;inset:0;
+  border-radius:50%;
+  border:3px solid rgba(200,149,74,.6);
+  animation:ringExpand 1.8s ease-out infinite;
+}
+.levelup-ring:nth-child(2){animation-delay:.4s;}
+.levelup-ring:nth-child(3){animation-delay:.8s;}
+@keyframes ringExpand{
+  0%{transform:scale(.4);opacity:1;}
+  100%{transform:scale(1.8);opacity:0;}
+}
+.levelup-circle{
+  position:absolute;inset:20px;
+  border-radius:50%;
+  background:rgba(200,149,74,.15);
+  border:3px solid var(--gold);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  animation:lvlPop .5s cubic-bezier(.34,1.56,.64,1) .2s both;
+}
+@keyframes lvlPop{from{transform:scale(0);}to{transform:scale(1);}}
+.levelup-num{font-family:var(--font-head);font-size:3rem;font-weight:700;color:var(--gold);line-height:1;}
+.levelup-label{font-size:.65rem;font-weight:700;letter-spacing:.12em;color:rgba(200,149,74,.7);}
+.levelup-title{font-family:var(--font-head);font-size:1.8rem;color:#fff;margin-bottom:6px;animation:lvlPop .5s cubic-bezier(.34,1.56,.64,1) .5s both;}
+.levelup-sub{font-size:.9rem;color:rgba(255,255,255,.6);animation:lvlPop .5s cubic-bezier(.34,1.56,.64,1) .65s both;}
+.levelup-close{margin-top:32px;padding:12px 32px;background:var(--gold);color:#fff;border:none;border-radius:999px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--font-body);animation:lvlPop .5s cubic-bezier(.34,1.56,.64,1) .8s both;}
+
+/* ===== CHALLENGE HISTORY PANEL (#6) ===== */
+.history-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.45);
+  z-index:9990;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.history-sheet{
+  background:var(--cream);
+  border-radius:20px 20px 0 0;
+  padding:20px 24px 32px;
+  width:100%;max-width:640px;
+  max-height:80vh;overflow-y:auto;
+  animation:slideUp .3s ease;
+}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+
 /* ===== TOGGLE SWITCH ===== */
 .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border-light); gap:16px; }
 .toggle-row:last-child { border-bottom:none; }
@@ -779,7 +868,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
   <div class="sidebar-footer">
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v1.5.0</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v1.6.0</div>
   </div>
 </aside>
 
@@ -1347,7 +1436,10 @@ html.dark .mob-sheet{background:var(--card-bg);}
       <div class="card">
         <div class="card-head-row">
           <div class="card-label">Wekelijkse uitdagingen</div>
-          <div id="challenges-week" class="badge badge-neutral" style="font-size:.75rem"></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div id="challenges-week" class="badge badge-neutral" style="font-size:.75rem"></div>
+            <button class="btn secondary" style="padding:4px 12px;font-size:.75rem" onclick="toonChallengeHistory()">📋 Vorige weken</button>
+          </div>
         </div>
         <div id="challenges-list" style="display:flex;flex-direction:column;gap:12px;margin-top:8px"></div>
       </div>
@@ -1460,6 +1552,12 @@ html.dark .mob-sheet{background:var(--card-bg);}
           <div class="toggle-row">
             <div class="toggle-info"><div class="toggle-label">😴 Slaap</div><div class="toggle-desc">Slaapuren en kwaliteit</div></div>
             <label class="toggle"><input type="checkbox" id="tog-slaap" data-key="slaap" onchange="saveToggle(this.dataset.key)"><span class="toggle-track"></span></label>
+          </div>
+
+          <!-- Compact modus — alleen mobiel -->
+          <div class="toggle-row" id="compact-toggle-row" style="display:none">
+            <div class="toggle-info"><div class="toggle-label">📱 Compact modus</div><div class="toggle-desc">Kleinere kaarten op telefoon</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-compact" onchange="saveCompact()"><span class="toggle-track"></span></label>
           </div>
 
           <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin:16px 0 8px">Dashboard widgets</div>
@@ -1884,7 +1982,7 @@ function addGewicht(){
   data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.gewicht,data);
   document.getElementById('input-gewicht').value='';document.getElementById('input-gewicht-note').value='';
   savePop('dash-gewicht-chart');flashStat('stat-gewicht');popCard('dash-gewicht-chart');
-  renderGewicht();renderDashboard();checkNewBadges();triggerAutoSync();
+  renderGewicht();renderDashboard();checkNewBadges();showXPFloat(15,'stat-gewicht');checkLevelUp();triggerAutoSync();
 }
 function deleteGewicht(id){save(KEYS.gewicht,load(KEYS.gewicht).filter(x=>x.id!==id));renderGewicht();renderDashboard();triggerAutoSync();}
 function renderGewicht(){
@@ -1924,7 +2022,7 @@ function addSport(){
   data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.sport,data);
   document.getElementById('input-sport-duur').value='';document.getElementById('input-sport-note').value='';
   savePop('dash-sport-chart');flashStat('stat-sport');popCard('dash-sport-chart');
-  renderSport();renderDashboard();checkNewBadges();triggerAutoSync();
+  renderSport();renderDashboard();checkNewBadges();showXPFloat(20,'stat-sport');checkLevelUp();triggerAutoSync();
 }
 function deleteSport(id){save(KEYS.sport,load(KEYS.sport).filter(x=>x.id!==id));renderSport();renderDashboard();triggerAutoSync();}
 function renderSport(){
@@ -2024,6 +2122,7 @@ function renderSettings(){
     const motEl=document.getElementById('set-motivatie');
     if(motEl&&s.motivatie) motEl.value=s.motivatie;
     renderHerhalingList();
+    applyCompact();
     const v=getVis();
     ['gewicht','sport','water','slaap','snel','streaks','voortgang','weekdoel','bmi'].forEach(k=>{
       const el=document.getElementById('tog-'+k);
@@ -2082,7 +2181,7 @@ function quickAddGewicht(){
   const data=load(KEYS.gewicht);data.push({id:Date.now(),datum,val,note});
   data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.gewicht,data);
   document.getElementById('q-gewicht-val').value='';document.getElementById('q-gewicht-note').value='';
-  toggleQuick('__close');savePop('dash-gewicht-chart');flashStat('stat-gewicht');popCard('dash-gewicht-chart');renderDashboard();showToast('⚖️ '+val+' kg opgeslagen ('+fmtDate(datum)+')');checkNewBadges();triggerAutoSync();
+  toggleQuick('__close');savePop('dash-gewicht-chart');flashStat('stat-gewicht');popCard('dash-gewicht-chart');renderDashboard();showToast('⚖️ '+val+' kg opgeslagen ('+fmtDate(datum)+')');checkNewBadges();showXPFloat(15,'stat-gewicht');checkLevelUp();triggerAutoSync();
 }
 function quickAddSport(){
   const duur=parseInt(document.getElementById('q-sport-duur').value);
@@ -2091,12 +2190,12 @@ function quickAddSport(){
   const data=load(KEYS.sport);data.push({id:Date.now(),datum:todayStr(),sport:qSelectedSport,duur,note});
   data.sort((a,b)=>a.datum.localeCompare(b.datum));save(KEYS.sport,data);
   document.getElementById('q-sport-duur').value='';document.getElementById('q-sport-note').value='';
-  toggleQuick('__close');savePop('dash-sport-chart');flashStat('stat-sport');popCard('dash-sport-chart');renderDashboard();showToast('🏃 '+qSelectedSport+' '+duur+' min opgeslagen');checkNewBadges();triggerAutoSync();
+  toggleQuick('__close');savePop('dash-sport-chart');flashStat('stat-sport');popCard('dash-sport-chart');renderDashboard();showToast('🏃 '+qSelectedSport+' '+duur+' min opgeslagen');checkNewBadges();showXPFloat(20,'stat-sport');checkLevelUp();triggerAutoSync();
 }
 function quickAddWater(){
   const goal=parseInt(loadSettings().waterdoel)||8,current=getWaterToday();
   if(current>=goal){showToast('💧 Dagdoel al bereikt! 🎉');return;}
-  setWaterToday(current+1);flashStat('stat-water');popCard('dash-water-card');renderDashboard();showToast('💧 Glas gelogd! ('+(current+1)+'/'+goal+')');checkNewBadges();
+  setWaterToday(current+1);flashStat('stat-water');popCard('dash-water-card');renderDashboard();showToast('💧 Glas gelogd! ('+(current+1)+'/'+goal+')');checkNewBadges();showXPFloat(5,'stat-water');
 }
 function updateQuickWaterCount(){
   const goal=parseInt(loadSettings().waterdoel)||8,filled=getWaterToday();
@@ -2594,6 +2693,166 @@ function checkHerhaling(){
     qSelectedSport=match.sport;
     showToast(`🔄 Terugkerende training: ${match.sport} ${match.duur} min — alvast ingevuld!`);
   },1200);
+}
+
+// ===== COUNT-UP ANIMATIE (#32) =====
+function countUp(el,target,duration=800,suffix=''){
+  if(!el||isNaN(target)) return;
+  const start=Date.now();
+  const from=0;
+  function tick(){
+    const p=Math.min(1,(Date.now()-start)/duration);
+    const ease=1-Math.pow(1-p,3);
+    const val=Math.round(from+(target-from)*ease);
+    el.textContent=val+suffix;
+    if(p<1) requestAnimationFrame(tick);
+    else el.textContent=target+suffix;
+  }
+  requestAnimationFrame(tick);
+}
+
+// ===== XP FLOAT (#3) =====
+function showXPFloat(amount,anchorId){
+  const anchor=anchorId?document.getElementById(anchorId):null;
+  const div=document.createElement('div');
+  div.className='xp-float';
+  div.textContent='+'+amount+' XP';
+  let x=window.innerWidth/2-40, y=window.innerHeight/2-40;
+  if(anchor){
+    const r=anchor.getBoundingClientRect();
+    x=r.left+r.width/2-40;
+    y=r.top;
+  }
+  div.style.cssText+=`;left:${x}px;top:${y}px;`;
+  document.body.appendChild(div);
+  setTimeout(()=>div.remove(),1700);
+}
+
+// ===== LEVEL-UP OVERLAY (#4) =====
+let lastKnownLevel=0;
+function checkLevelUp(){
+  const{xp}=berekenXP();
+  const level=getLevel(xp);
+  const stored=parseInt(localStorage.getItem('tracker_last_level')||'0');
+  if(stored===0){localStorage.setItem('tracker_last_level',level);return;}
+  if(level>stored){
+    localStorage.setItem('tracker_last_level',level);
+    toonLevelUp(level);
+  }
+}
+function toonLevelUp(level){
+  const overlay=document.createElement('div');
+  overlay.className='levelup-overlay';
+  overlay.innerHTML=`
+    <div class="levelup-rings">
+      <div class="levelup-ring"></div>
+      <div class="levelup-ring"></div>
+      <div class="levelup-ring"></div>
+      <div class="levelup-circle">
+        <div class="levelup-num">${level}</div>
+        <div class="levelup-label">LEVEL</div>
+      </div>
+    </div>
+    <div class="levelup-title">Level ${level} bereikt!</div>
+    <div class="levelup-sub">${LEVEL_TITLES[level]} — goed bezig, Joost!</div>
+    <button class="levelup-close" onclick="this.closest('.levelup-overlay').remove()">Doorgaan →</button>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+}
+
+// ===== COMPACT MODUS (#34) =====
+function saveCompact(){
+  const on=document.getElementById('tog-compact')?.checked;
+  const s=loadSettings();s.compactMobile=on;saveSettingsData(s);
+  applyCompact();triggerAutoSync();
+}
+function applyCompact(){
+  const s=loadSettings();
+  document.documentElement.classList.toggle('compact',!!s.compactMobile);
+  const tog=document.getElementById('tog-compact');
+  if(tog) tog.checked=!!s.compactMobile;
+  // Toon compact toggle alleen op mobiel
+  const row=document.getElementById('compact-toggle-row');
+  if(row) row.style.display=window.innerWidth<=768?'flex':'none';
+}
+
+// ===== CHALLENGE HISTORY (#6) =====
+function getWeekChallengesForDate(weekStart){
+  const gData=load(KEYS.gewicht);
+  const sData=load(KEYS.sport);
+  const wData=load(KEYS.water);
+  const slData=load(KEYS.slaap);
+  const settings=loadSettings();
+  const doel=parseInt(settings.waterdoel)||8;
+  const sportDoel=parseInt(settings.sportdoel)||3;
+
+  const weekDays=[];
+  const start=new Date(weekStart);
+  for(let i=0;i<7;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    weekDays.push(d.toISOString().slice(0,10));
+  }
+
+  const sportCount=sData.filter(x=>weekDays.includes(x.datum)).length;
+  const waterCount=weekDays.filter(d=>{const e=wData.find(x=>x.datum===d);return e&&e.glazen>=doel;}).length;
+  const slaapCount=slData.filter(x=>weekDays.includes(x.datum)&&x.uren>=7).length;
+  const gewCount=gData.filter(x=>weekDays.includes(x.datum)).length;
+
+  return[
+    {icon:'🏃',title:`Train ${sportDoel}x`,done:sportCount>=sportDoel,progress:`${sportCount}/${sportDoel}`},
+    {icon:'💧',title:'Waterdoel 5x',done:waterCount>=5,progress:`${waterCount}/5`},
+    {icon:'😴',title:'Slaap 4x 7+u',done:slaapCount>=4,progress:`${slaapCount}/4`},
+    {icon:'⚖️',title:'Meet 2x gewicht',done:gewCount>=2,progress:`${gewCount}/2`},
+  ];
+}
+
+function toonChallengeHistory(){
+  // Bereken laatste 6 weken
+  const weken=[];
+  for(let i=1;i<=6;i++){
+    const d=new Date();
+    d.setDate(d.getDate()-i*7);
+    const dow=d.getDay();
+    d.setDate(d.getDate()-(dow===0?6:dow-1));
+    weken.push(d.toISOString().slice(0,10));
+  }
+
+  const overlay=document.createElement('div');
+  overlay.className='history-overlay';
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+
+  const mn=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  const content=weken.map(ws=>{
+    const challenges=getWeekChallengesForDate(ws);
+    const done=challenges.filter(c=>c.done).length;
+    const d=new Date(ws);
+    const weekLabel=`Week van ${d.getDate()} ${mn[d.getMonth()]}`;
+    return `<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:.82rem;font-weight:700;color:var(--text)">${weekLabel}</div>
+        <span class="badge ${done>=3?'badge-good':done>0?'badge-gold':'badge-neutral'}" style="font-size:.7rem">${done}/4 behaald</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${challenges.map(c=>`
+          <div style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:.75rem;
+            background:${c.done?'var(--sage-pale)':'var(--parchment)'};
+            border:1px solid ${c.done?'var(--sage-light)':'var(--border)'};
+            color:${c.done?'var(--sage)':'var(--text-muted)'}">
+            ${c.icon} ${c.title}
+            ${c.done?'✓':`<span style="opacity:.6">${c.progress}</span>`}
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  overlay.innerHTML=`<div class="history-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-family:var(--font-head);font-size:1.1rem;color:var(--text)">Voltooide uitdagingen</div>
+      <button onclick="this.closest('.history-overlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text-muted);padding:4px 8px">✕</button>
+    </div>
+    ${content}
+  </div>`;
+  document.body.appendChild(overlay);
 }
 
 // ===== SAVE POP =====
@@ -3523,10 +3782,13 @@ function renderDashboard(){
   const greetEl=document.getElementById('welcome-greeting');
   if(greetEl) greetEl.textContent=naam||new Date().toLocaleDateString('nl-NL',{weekday:'long'});
 
-  document.getElementById('dash-gewicht').textContent=latest?latest.toFixed(1):'—';
   const thisWeekSport=sData.filter(x=>weekKey(x.datum)===weekKey(todayStr())).length;
-  document.getElementById('dash-sport').textContent=thisWeekSport;
-  document.getElementById('dash-water').textContent=wFilled;
+  const gewEl=document.getElementById('dash-gewicht');
+  if(latest){countUp(gewEl,Math.round(latest*10)/10,700);}else if(gewEl) gewEl.textContent='—';
+  const sportEl=document.getElementById('dash-sport');
+  countUp(sportEl,thisWeekSport,500);
+  const waterEl=document.getElementById('dash-water');
+  countUp(waterEl,wFilled,400);
   document.getElementById('dash-water-unit').textContent='/ '+goal;
 
   // Slaap stat (gisteren)
@@ -3742,6 +4004,7 @@ async function init(){
   initBadgeTracking();
   initHeatmap();
   applyDarkMode();
+  applyCompact();
 
   // Laad-overlay tonen
   const overlay=document.getElementById('init-overlay');
