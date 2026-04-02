@@ -915,8 +915,8 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <button class="nav-item" onclick="switchTab('uitdagingen')">
       <span class="nav-icon">⚡</span><span class="nav-label">Uitdagingen</span>
     </button>
-    <button class="nav-item" onclick="switchTab('statistieken')">
-      <span class="nav-icon">📊</span><span class="nav-label">Statistieken</span>
+    <button class="nav-item" onclick="switchTab('rapport')">
+      <span class="nav-icon">📊</span><span class="nav-label">Rapport</span>
     </button>
     <button class="nav-item" onclick="switchTab('instellingen')">
       <span class="nav-icon">⚙️</span><span class="nav-label">Instellingen</span>
@@ -932,7 +932,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div id="last-sync-time" style="font-size:.62rem;color:rgba(255,255,255,.28);padding:0 14px 4px;min-height:14px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.5.0 ↑</div>
+    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.6.0 ↑</div>
   </div>
 </aside>
 
@@ -1587,12 +1587,53 @@ html.dark .mob-sheet{background:var(--card-bg);}
   </div>
 
   <!-- ===== STATISTIEKEN ===== -->
-  <div class="view" id="view-statistieken">
+  <div class="view" id="view-rapport">
     <div class="page-header">
-      <div><div class="page-title">📊 <em>Statistieken</em></div><div class="page-subtitle">Jouw volledige cijfers in één overzicht</div></div>
+      <div><div class="page-title">📊 <em>Rapport</em></div><div class="page-subtitle">Genereer een volledig rapport over een gekozen periode</div></div>
     </div>
-    <div id="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:20px"></div>
-    <div class="grid-2 gap-section" id="stats-details"></div>
+
+    <!-- Rapport periode -->
+    <div class="gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">Periode selecteren</div>
+        <div class="input-row" style="margin-bottom:16px">
+          <div class="input-group">
+            <label>Van datum</label>
+            <input type="date" id="rapport-van">
+          </div>
+          <div class="input-group">
+            <label>Tot datum</label>
+            <input type="date" id="rapport-tot">
+          </div>
+        </div>
+        <button class="btn gold" onclick="exportVolledigRapport()" style="width:100%;padding:13px;font-size:.95rem">📊 Rapport genereren &amp; openen</button>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-top:10px;line-height:1.5">Het rapport opent in een nieuw venster. Gebruik de knop rechtsboven om het op te slaan als PDF of te printen.</p>
+      </div>
+    </div>
+
+    <!-- Wat bevat het rapport -->
+    <div class="gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:14px">Het rapport bevat</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px;font-size:.85rem;color:var(--text-soft)"><span style="font-size:1.2rem">⚖️</span><div><strong style="color:var(--text)">Gewicht</strong> — lijndiagram met alle meetmomenten</div></div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:.85rem;color:var(--text-soft)"><span style="font-size:1.2rem">😴</span><div><strong style="color:var(--text)">Slaap</strong> — lijndiagram per nacht, gekleurd op kwaliteit</div></div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:.85rem;color:var(--text-soft)"><span style="font-size:1.2rem">🏃</span><div><strong style="color:var(--text)">Sport heatmap</strong> — GitHub-stijl kalender op intensiteit</div></div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:.85rem;color:var(--text-soft)"><span style="font-size:1.2rem">💧</span><div><strong style="color:var(--text)">Water</strong> — glazen per dag als lijndiagram</div></div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:.85rem;color:var(--text-soft)"><span style="font-size:1.2rem">🥤</span><div><strong style="color:var(--text)">Cola</strong> — glazen per dag, rood boven dagdoel</div></div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:.85rem;color:var(--text-soft)"><span style="font-size:1.2rem">🩺</span><div><strong style="color:var(--text)">Klachten</strong> — per dag gegroepeerd met ernst en notitie</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSV export -->
+    <div class="gap-section">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:10px">Ruwe data exporteren</div>
+        <p style="font-size:.83rem;color:var(--text-soft);line-height:1.6;margin-bottom:14px">Download al je data als CSV voor Excel of Google Sheets.</p>
+        <button class="btn sage" onclick="exportCSV()" style="width:100%">⬇ Download alle data als CSV</button>
+      </div>
+    </div>
   </div>
 
   <!-- ===== KLACHTEN ===== -->
@@ -1826,25 +1867,6 @@ html.dark .mob-sheet{background:var(--card-bg);}
         </div>
 
         <div class="card">
-          <div class="card-label" style="margin-bottom:10px">Exporteren</div>
-          <p style="font-size:.83rem;color:var(--text-soft);line-height:1.6;margin-bottom:14px">Download al je data als CSV voor Excel of Google Sheets.</p>
-          <button class="btn sage" onclick="exportCSV()" style="width:100%;margin-bottom:10px">⬇ Download alle data als CSV</button>
-          <div style="height:1px;background:var(--border-light);margin-bottom:14px"></div>
-          <p style="font-size:.83rem;color:var(--text-soft);line-height:1.6;margin-bottom:12px">Genereer een volledig rapport over een gekozen periode — geschikt om te printen of op te slaan als PDF.</p>
-          <div class="input-row" style="margin-bottom:12px">
-            <div class="input-group">
-              <label>Van datum</label>
-              <input type="date" id="rapport-van">
-            </div>
-            <div class="input-group">
-              <label>Tot datum</label>
-              <input type="date" id="rapport-tot">
-            </div>
-          </div>
-          <button class="btn gold" onclick="exportVolledigRapport()" style="width:100%">📊 Rapport genereren</button>
-        </div>
-
-        <div class="card">
           <div class="card-label" style="margin-bottom:10px">Gevaarzone</div>
           <p style="font-size:.83rem;color:var(--text-soft);line-height:1.6;margin-bottom:14px">Alle data wordt lokaal opgeslagen in je browser.</p>
           <button class="btn danger" onclick="clearAll()" style="width:100%">🗑 Alle data wissen</button>
@@ -1968,8 +1990,8 @@ html.dark .mob-sheet{background:var(--card-bg);}
   <div class="mob-more-btn" onclick="switchTab('uitdagingen');closeMobSheets()">
     <div class="mob-more-icon">⚡</div><span>Uitdagingen</span>
   </div>
-  <div class="mob-more-btn" onclick="switchTab('statistieken');closeMobSheets()">
-    <div class="mob-more-icon">📊</div><span>Statistieken</span>
+  <div class="mob-more-btn" onclick="switchTab('rapport');closeMobSheets()">
+    <div class="mob-more-icon">📊</div><span>Rapport</span>
   </div>
   <div class="mob-more-btn" onclick="switchTab('klachten');closeMobSheets()">
     <div class="mob-more-icon">🩺</div><span>Klachten</span>
@@ -2015,7 +2037,7 @@ function thisWeekDays(){
 
 // ===== NAV =====
 function switchTab(tab){
-  const tabs=['dashboard','gewicht','sport','water','slaap','prestaties','uitdagingen','statistieken','klachten','instellingen'];
+  const tabs=['dashboard','gewicht','sport','water','slaap','prestaties','uitdagingen','rapport','klachten','instellingen'];
   document.querySelectorAll('.nav-item').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const view=document.getElementById('view-'+tab);
@@ -2035,7 +2057,7 @@ function switchTab(tab){
   if(tab==='slaap') renderSlaap();
   if(tab==='prestaties') renderPrestaties();
   if(tab==='uitdagingen') renderUitdagingen();
-  if(tab==='statistieken') renderStatistieken();
+  if(tab==='rapport') renderRapport();
   if(tab==='klachten') renderKlachten();
   if(tab==='instellingen') renderSettings();
   // Mobiele nav bijwerken
@@ -2392,22 +2414,27 @@ ${kData.length>0?`<div class="sectie">
 </div>
 
 <script>
-// Label plugin — witte achtergrond, geen suffix, altijd boven punt
+// Label plugin — witte halo rondom tekst, lijn loopt ononderbroken door
 function lblPlugin(getClr){
   return{id:'lbl',afterDatasetsDraw(chart){
     const ctx=chart.ctx,meta=chart.getDatasetMeta(0);
     const aL=chart.chartArea.left,aR=chart.chartArea.right,aT=chart.chartArea.top;
-    ctx.save();ctx.font='bold 8.5px Segoe UI';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.save();
+    ctx.font='bold 8.5px Segoe UI';ctx.textAlign='center';ctx.textBaseline='bottom';
     meta.data.forEach((pt,i)=>{
       const v=chart.data.datasets[0].data[i];if(v==null)return;
       const clr=typeof getClr==='function'?getClr(v):getClr;
-      // Clamp X binnen chartArea zodat eerste en laatste label niet afsnijden
       const bx=Math.max(aL+22,Math.min(pt.x,aR-22));
       const by=Math.max(aT+14,pt.y-8);
-      const t=String(v),tw=ctx.measureText(t).width;
-      ctx.fillStyle='rgba(255,255,255,.95)';
-      ctx.fillRect(bx-tw/2-2,by-12,tw+4,13);
-      ctx.fillStyle=clr;ctx.fillText(t,bx,by);
+      const t=String(v);
+      // Witte halo (stroke) zodat tekst leesbaar is zonder de lijn te blokkeren
+      ctx.strokeStyle='rgba(255,255,255,0.95)';
+      ctx.lineWidth=3;
+      ctx.lineJoin='round';
+      ctx.strokeText(t,bx,by);
+      // Tekst zelf
+      ctx.fillStyle=clr;
+      ctx.fillText(t,bx,by);
     });ctx.restore();
   }};
 }
@@ -3641,6 +3668,17 @@ function checkHerhaling(){
 }
 
 // ===== STATISTIEKEN TAB (#37) =====
+function renderRapport(){
+  // Prefill datums
+  const vanEl=document.getElementById('rapport-van');
+  const totEl=document.getElementById('rapport-tot');
+  if(vanEl&&!vanEl.value){
+    const m=new Date();m.setDate(m.getDate()-30);
+    vanEl.value=m.toISOString().slice(0,10);
+  }
+  if(totEl&&!totEl.value) totEl.value=todayStr();
+}
+
 function renderStatistieken(){
   const gData=load(KEYS.gewicht);
   const sData=load(KEYS.sport);
@@ -3796,6 +3834,16 @@ function restoreDashOrder(){
 
 // ===== PATCHNOTES =====
 const PATCHNOTES=[
+  {versie:'v2.6.0',datum:'2 april 2026',items:[
+    'Statistieken tab vervangen door Rapport tab',
+    'Rapport genereren verplaatst van Instellingen naar Rapport tab',
+    'Rapport tab toont overzicht van wat er in het rapport staat',
+    'CSV export verplaatst naar Rapport tab',
+    'Versienummer en patchnotes worden voortaan altijd bijgewerkt bij elke update',
+    'Rapport labels: witte halo rondom tekst zodat de lijn doorloopt',
+    'Rapport: printknop rechtsboven, geen auto-print meer',
+    'Rapport: x-as labels hebben ademruimte van de kaartrand',
+  ]},
   {versie:'v2.5.0',datum:'2 april 2026',items:[
     'Volledig rapport export verbeterd: grafieken onder elkaar over volledige breedte',
     'Heatmap sport: dagnummer in elke cel, leesbare kleur per achtergrond',
