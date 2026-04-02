@@ -594,6 +594,17 @@ textarea { resize:vertical; min-height:70px; }
 .mm-stat-label { font-size:.68rem; color:var(--text-muted); margin-top:2px; }
 .mm-add-form { background:var(--cream2); border-radius:14px; padding:16px; margin-top:14px; border:1px solid var(--border); display:none; }
 
+/* ===== CHECK-IN (#1) ===== */
+.checkin-card{background:linear-gradient(135deg,#7a3030,#9a4040);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;color:#fff;}
+.checkin-fire{font-size:2rem;flex-shrink:0}
+.checkin-info{flex:1;min-width:120px}
+.checkin-streak{font-family:var(--font-head);font-size:1.6rem;font-weight:700;color:#e8ba76;line-height:1}
+.checkin-sub{font-size:.75rem;color:rgba(255,255,255,.65);margin-top:2px}
+.checkin-msg{font-size:.82rem;color:rgba(255,255,255,.8);margin-top:4px}
+.checkin-btn-main{background:#c8954a;color:#fff;border:none;border-radius:999px;padding:10px 22px;font-size:.88rem;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap;transition:opacity .15s;flex-shrink:0}
+.checkin-btn-main:hover{opacity:.85}
+.checkin-done{background:var(--sage-pale);border:1.5px solid var(--sage-light);border-radius:var(--radius);padding:10px 18px;display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--sage);font-weight:600}
+
 /* ===== COMPACT MODUS (#34) ===== */
 @media(max-width:768px){
   html.compact .card{padding:10px 12px!important;}
@@ -873,7 +884,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
   <div class="sidebar-footer">
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v1.7.0</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v1.9.0</div>
   </div>
 </aside>
 
@@ -893,6 +904,9 @@ html.dark .mob-sheet{background:var(--card-bg);}
         <span class="quote-text" id="quote-text">Kleine stappen tellen.</span>
       </div>
     </div>
+
+    <!-- Check-in kaart -->
+    <div id="checkin-banner" class="gap-section" style="display:none"></div>
 
     <!-- Row 1: stat cards compact -->
     <div class="gap-section" id="dash-stat-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
@@ -1441,12 +1455,34 @@ html.dark .mob-sheet{background:var(--card-bg);}
       <div class="card">
         <div class="card-head-row">
           <div class="card-label">Wekelijkse uitdagingen</div>
-          <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center">
             <div id="challenges-week" class="badge badge-neutral" style="font-size:.75rem"></div>
             <button class="btn secondary" style="padding:4px 12px;font-size:.75rem" onclick="toonChallengeHistory()">📋 Vorige weken</button>
           </div>
         </div>
         <div id="challenges-list" style="display:flex;flex-direction:column;gap:12px;margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- Maanddoelen (#4) -->
+    <div class="gap-section">
+      <div class="card">
+        <div class="card-head-row">
+          <div class="card-label">Maanddoelen</div>
+          <div id="maand-badge" class="badge badge-neutral" style="font-size:.75rem"></div>
+        </div>
+        <div id="maand-doelen-list" style="display:flex;flex-direction:column;gap:12px;margin-top:8px"></div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-light);display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div class="input-group" style="flex:1;min-width:140px">
+            <label>Maanddoel sport (trainingen)</label>
+            <input type="number" id="set-maanddoel-sport" placeholder="bijv. 12" min="1" max="90">
+          </div>
+          <div class="input-group" style="flex:1;min-width:140px">
+            <label>Maanddoel gewicht (kg verlies)</label>
+            <input type="number" id="set-maanddoel-gewicht" placeholder="bijv. 2" step="0.5" min="0.5" max="10">
+          </div>
+          <button class="btn gold" onclick="saveMaanddoelen()" style="align-self:flex-end;padding:9px 18px">Opslaan</button>
+        </div>
       </div>
     </div>
 
@@ -2703,6 +2739,65 @@ function checkHerhaling(){
   },1200);
 }
 
+// ===== DAGELIJKSE CHECK-IN (#1) =====
+function loadCheckin(){
+  try{return JSON.parse(localStorage.getItem('tracker_checkin'))||{streak:0,best:0,last:''};}
+  catch{return{streak:0,best:0,last:''};}
+}
+function saveCheckin(d){localStorage.setItem('tracker_checkin',JSON.stringify(d));}
+
+function doCheckin(){
+  const data=loadCheckin();
+  const gisteren=new Date();gisteren.setDate(gisteren.getDate()-1);
+  const gisterenStr=gisteren.toISOString().slice(0,10);
+  // Streak bewaren als gisteren was ingecheckt, anders opnieuw beginnen
+  const newStreak=data.last===gisterenStr?data.streak+1:1;
+  const newBest=Math.max(data.best,newStreak);
+  const updated={streak:newStreak,best:newBest,last:todayStr()};
+  saveCheckin(updated);
+  // XP beloning
+  showXPFloat(5,'checkin-banner');
+  checkLevelUp();
+  triggerAutoSync();
+  renderCheckin();
+  showToast('🔥 Ingecheckt! Streak: '+newStreak+' dagen — +5 XP');
+}
+
+function renderCheckin(){
+  const banner=document.getElementById('checkin-banner');
+  if(!banner) return;
+  const data=loadCheckin();
+  const vandaagIngecheckt=data.last===todayStr();
+
+  if(vandaagIngecheckt){
+    banner.style.display='block';
+    banner.innerHTML=`<div class="checkin-done">
+      <span style="font-size:1.2rem">✅</span>
+      <span>Vandaag ingecheckt — streak: <strong>${data.streak} dag${data.streak!==1?'en':''}</strong></span>
+      <span style="margin-left:auto;font-size:.72rem;color:var(--sage-light)">Beste: ${data.best} dagen</span>
+    </div>`;
+  } else {
+    banner.style.display='block';
+    const gisteren=new Date();gisteren.setDate(gisteren.getDate()-1);
+    const streakActief=data.last===gisteren.toISOString().slice(0,10);
+    const streakNum=streakActief?data.streak:0;
+    const msgs=['Druk op de knop om je dag te starten!',
+      'Elke dag telt — check in en bouw je streak!',
+      'Jij kan dit — laat die streak groeien!',
+      'Nog niet ingecheckt vandaag — doe het nu!'];
+    const msg=msgs[new Date().getDay()%msgs.length];
+    banner.innerHTML=`<div class="checkin-card">
+      <div class="checkin-fire">${streakNum>=7?'🏆':streakNum>=3?'🔥':'⚡'}</div>
+      <div class="checkin-info">
+        <div class="checkin-streak">${streakNum} dag${streakNum!==1?'en':''}</div>
+        <div class="checkin-sub">huidige streak${data.best>0?' · beste: '+data.best+' dagen':''}</div>
+        <div class="checkin-msg">${msg}</div>
+      </div>
+      <button class="checkin-btn-main" onclick="doCheckin()">+5 XP · Inchecken</button>
+    </div>`;
+  }
+}
+
 // ===== PWA SETUP (#32) =====
 function setupPWA(){
   // Teken icoon op canvas
@@ -3251,6 +3346,12 @@ function berekenXP(){
   xp+=streakXP;
   if(streakXP>0) breakdown.push({icon:'🔥',label:'Streak bonus',xp:streakXP,count:waterStreak+sportStreak+' dagen'});
 
+  // Check-in streak: 3 XP per dag
+  const checkinData=loadCheckin();
+  const checkinXP=(checkinData.streak||0)*3;
+  xp+=checkinXP;
+  if(checkinXP>0) breakdown.push({icon:'🗓️',label:'Check-in streak',xp:checkinXP,count:checkinData.streak+' dagen'});
+
   return{xp,breakdown};
 }
 
@@ -3311,6 +3412,95 @@ function renderUitdagingen(){
     </div>`).join('');
 
   renderChallenges();
+  renderMaanddoelen();
+}
+
+// ===== MAANDDOELEN (#4) =====
+function saveMaanddoelen(){
+  const s=loadSettings();
+  const sport=parseInt(document.getElementById('set-maanddoel-sport').value)||0;
+  const gewicht=parseFloat(document.getElementById('set-maanddoel-gewicht').value)||0;
+  if(sport) s.maanddoelSport=sport;
+  if(gewicht) s.maanddoelGewicht=gewicht;
+  saveSettingsData(s);
+  renderMaanddoelen();
+  showToast('✓ Maanddoelen opgeslagen!');
+  triggerAutoSync();
+}
+
+function renderMaanddoelen(){
+  const s=loadSettings();
+  const maandStr=new Date().toISOString().slice(0,7);
+  const sData=load(KEYS.sport);
+  const gData=load(KEYS.gewicht);
+
+  const sportDezeM=sData.filter(x=>x.datum.startsWith(maandStr)).length;
+  const gDezeM=gData.filter(x=>x.datum.startsWith(maandStr));
+  const gewVerlies=gDezeM.length>=2?Math.max(0,gDezeM[0].val-gDezeM[gDezeM.length-1].val):0;
+
+  const doelen=[];
+  if(s.maanddoelSport){
+    doelen.push({icon:'🏃',title:`${s.maanddoelSport} trainingen deze maand`,current:sportDezeM,doel:s.maanddoelSport,unit:'trainingen'});
+  }
+  if(s.maanddoelGewicht){
+    doelen.push({icon:'⚖️',title:`${s.maanddoelGewicht} kg afvallen deze maand`,current:Math.round(gewVerlies*10)/10,doel:s.maanddoelGewicht,unit:'kg'});
+  }
+
+  const list=document.getElementById('maand-doelen-list');
+  const badge=document.getElementById('maand-badge');
+  if(!list) return;
+
+  // Prefill inputs
+  const si=document.getElementById('set-maanddoel-sport');
+  const gi=document.getElementById('set-maanddoel-gewicht');
+  if(si&&s.maanddoelSport) si.value=s.maanddoelSport;
+  if(gi&&s.maanddoelGewicht) gi.value=s.maanddoelGewicht;
+
+  if(!doelen.length){
+    list.innerHTML='<div style="font-size:.82rem;color:var(--text-muted);font-style:italic">Stel hieronder je maanddoelen in.</div>';
+    if(badge){badge.textContent='Geen doelen';badge.className='badge badge-neutral';}
+    return;
+  }
+
+  const behaald=doelen.filter(d=>d.current>=d.doel).length;
+  if(badge){badge.textContent=`${behaald}/${doelen.length} behaald`;badge.className='badge '+(behaald===doelen.length?'badge-good':behaald>0?'badge-gold':'badge-neutral');}
+
+  const mn=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  const maandNaam=mn[new Date().getMonth()];
+
+  list.innerHTML=doelen.map(d=>{
+    const pct=Math.min(100,Math.round(d.current/d.doel*100));
+    const done=d.current>=d.doel;
+    return `<div style="padding:14px;background:${done?'var(--sage-pale)':'var(--parchment)'};border-radius:14px;border:1.5px solid ${done?'var(--sage-light)':'var(--border)'}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:1.3rem">${d.icon}</div>
+        <div style="flex:1">
+          <div style="font-size:.88rem;font-weight:700;color:var(--text)">${d.title}</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:1px">${d.current} / ${d.doel} ${d.unit} — ${maandNaam}</div>
+        </div>
+        ${done?'<span style="font-size:1.1rem">✅</span>':''}
+      </div>
+      <div style="height:8px;background:rgba(0,0,0,.08);border-radius:999px;overflow:hidden">
+        <div style="height:100%;border-radius:999px;background:${done?'var(--sage)':'var(--gold)'};width:${pct}%;transition:width .5s"></div>
+      </div>
+      <div style="font-size:.7rem;color:var(--text-muted);margin-top:4px;text-align:right">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== UITDAGING DELEN (#5) =====
+function deelUitdaging(icon,title,doel,eenheid){
+  const tekst=`💪 Uitdaging: ${icon} ${title}\n\nKan jij dit ook? Track je voortgang op Mijn Welzijn!\nhttps://buitking.github.io/mijn-welzijn/`;
+
+  if(navigator.share){
+    navigator.share({title:'Uitdaging van Joost',text:tekst}).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(tekst).then(()=>{
+      showToast('📋 Uitdaging gekopieerd naar klembord!');
+    }).catch(()=>{
+      prompt('Kopieer deze uitdaging:',tekst);
+    });
+  }
 }
 
 // ===== WEKELIJKSE UITDAGINGEN (#12) =====
@@ -3377,6 +3567,7 @@ function renderChallenges(){
           <div style="font-size:.75rem;color:var(--text-muted);margin-top:1px">${c.desc}</div>
         </div>
         <div style="font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--gold-pale);color:var(--gold);white-space:nowrap">+${c.xp} XP</div>
+        <button onclick="deelUitdaging('${c.icon}','${c.title}',${c.doel},'')" title="Deel uitdaging" style="background:none;border:none;cursor:pointer;font-size:1rem;padding:2px 4px;color:var(--text-muted)">↗</button>
       </div>
       <div style="height:6px;background:rgba(0,0,0,.08);border-radius:999px;overflow:hidden">
         <div style="height:100%;border-radius:999px;background:${done?'var(--sage)':'var(--gold)'};width:${pct}%;transition:width .5s"></div>
@@ -3903,6 +4094,7 @@ function renderDashboard(){
 
   document.getElementById('streak-water').textContent=calcWaterStreak();
   document.getElementById('streak-sport').textContent=calcSportStreak();
+  renderCheckin();
   renderBMI(latest);
   renderVoortgang();
   renderMijlpalen();
