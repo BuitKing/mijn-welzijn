@@ -735,6 +735,14 @@ textarea { resize:vertical; min-height:70px; }
 }
 @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
 
+/* ===== DRAG & DROP DASHBOARD (#16) ===== */
+.dash-draggable{cursor:grab;position:relative;}
+.dash-draggable:active{cursor:grabbing;}
+.dash-drag-handle{position:absolute;top:8px;right:8px;opacity:0;transition:opacity .2s;font-size:.9rem;color:var(--text-muted);z-index:2;cursor:grab;padding:4px;}
+.dash-draggable:hover .dash-drag-handle{opacity:.5;}
+.dash-drag-over{outline:2px dashed var(--gold);outline-offset:3px;border-radius:var(--radius);}
+.dash-dragging{opacity:.4;}
+
 /* ===== TOGGLE SWITCH ===== */
 .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border-light); gap:16px; }
 .toggle-row:last-child { border-bottom:none; }
@@ -932,7 +940,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div id="last-sync-time" style="font-size:.62rem;color:rgba(255,255,255,.28);padding:0 14px 4px;min-height:14px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.7.0 ↑</div>
+    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.8.1 ↑</div>
   </div>
 </aside>
 
@@ -1875,6 +1883,16 @@ html.dark .mob-sheet{background:var(--card-bg);}
         </div>
 
         <div class="card">
+          <div class="card-label" style="margin-bottom:14px">💧 Water herinnering (#20)</div>
+          <p style="font-size:.83rem;color:var(--text-soft);line-height:1.6;margin-bottom:12px">Ontvang een melding als je 2 uur niets gedronken hebt. Werkt alleen als de app open is.</p>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-label">Water herinneringen</div><div class="toggle-desc">Melding elke 2 uur bij te weinig water</div></div>
+            <label class="toggle"><input type="checkbox" id="tog-water-reminder" onchange="toggleWaterReminder()"><span class="toggle-track"></span></label>
+          </div>
+          <div id="water-reminder-status" style="font-size:.75rem;color:var(--text-muted);margin-top:8px"></div>
+        </div>
+
+        <div class="card">
           <div class="card-label" style="margin-bottom:10px">Gevaarzone</div>
           <p style="font-size:.83rem;color:var(--text-soft);line-height:1.6;margin-bottom:14px">Alle data wordt lokaal opgeslagen in je browser.</p>
           <button class="btn danger" onclick="clearAll()" style="width:100%">🗑 Alle data wissen</button>
@@ -2161,9 +2179,13 @@ const BADGE_DEFS=[
   {id:'eerste_sport',emoji:'🌱',name:'Op dreef',desc:'Eerste training gelogd',check:()=>load(KEYS.sport).length>=1},
   {id:'10_trainingen',emoji:'💪',name:'10 trainingen',desc:'10 trainingen voltooid',check:()=>load(KEYS.sport).length>=10},
   {id:'25_trainingen',emoji:'🏅',name:'25 trainingen',desc:'25 trainingen voltooid',check:()=>load(KEYS.sport).length>=25},
-  {id:'eerste_kilo',emoji:'⚖️',name:'Eerste kilo',desc:'1 kg afgevallen',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),start=s.startgewicht||(g.length>0?g[0].val:null),latest=g.length>0?g[g.length-1].val:null;return start&&latest&&(start-latest)>=1;}},
-  {id:'vijf_kilo',emoji:'🏆',name:'5 kilo eraf!',desc:'5 kg afgevallen',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),start=s.startgewicht||(g.length>0?g[0].val:null),latest=g.length>0?g[g.length-1].val:null;return start&&latest&&(start-latest)>=5;}},
-  {id:'doel_bereikt',emoji:'🌟',name:'Doel bereikt!',desc:'Doelgewicht behaald',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),latest=g.length>0?g[g.length-1].val:null;return s.doelgewicht&&latest&&latest<=s.doelgewicht;}},
+  {id:'eerste_kilo',emoji:'⚖️',name:'Eerste kilo',desc:'1 kg afgevallen — 1 pak suiker lichter!',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),start=s.startgewicht||(g.length>0?g[0].val:null),latest=g.length>0?g[g.length-1].val:null;return start&&latest&&(start-latest)>=1;}},
+  {id:'twee_kilo',emoji:'🧱',name:'2 kg eraf',desc:'2 kg afgevallen — 2 pakken boter lichter!',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),start=s.startgewicht||(g.length>0?g[0].val:null),latest=g.length>0?g[g.length-1].val:null;return start&&latest&&(start-latest)>=2;}},
+  {id:'vijf_kilo',emoji:'🏆',name:'5 kilo eraf!',desc:'5 kg afgevallen — een volle rugzak lichter!',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),start=s.startgewicht||(g.length>0?g[0].val:null),latest=g.length>0?g[g.length-1].val:null;return start&&latest&&(start-latest)>=5;}},
+  {id:'tien_kilo',emoji:'🎉',name:'10 kilo eraf!',desc:'10 kg afgevallen — een gemiddelde hond lichter!',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),start=s.startgewicht||(g.length>0?g[0].val:null),latest=g.length>0?g[g.length-1].val:null;return start&&latest&&(start-latest)>=10;}},
+  {id:'vijftien_kilo',emoji:'🚀',name:'15 kilo eraf!',desc:'15 kg — een kantoorbureaustoel lichter!',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),start=s.startgewicht||(g.length>0?g[0].val:null),latest=g.length>0?g[g.length-1].val:null;return start&&latest&&(start-latest)>=15;}},
+  {id:'twintig_kilo',emoji:'🦁',name:'20 kilo eraf!',desc:'20 kg — een waterkoker + kettlebell + rugzak lichter!',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),start=s.startgewicht||(g.length>0?g[0].val:null),latest=g.length>0?g[g.length-1].val:null;return start&&latest&&(start-latest)>=20;}},
+  {id:'doel_bereikt',emoji:'🌟',name:'Doel bereikt!',desc:'Doelgewicht behaald — je hebt het gedaan!',check:()=>{const s=loadSettings(),g=load(KEYS.gewicht),latest=g.length>0?g[g.length-1].val:null;return s.doelgewicht&&latest&&latest<=s.doelgewicht;}},
   {id:'water_3d',emoji:'💧',name:'Hydratatie',desc:'3 dagen waterdoel gehaald',check:()=>calcWaterStreak()>=3},
   {id:'water_7d',emoji:'🌊',name:'Waterkampioen',desc:'7 dagen op rij',check:()=>calcWaterStreak()>=7},
   {id:'sport_3d',emoji:'🔥',name:'3 dagen actief',desc:'3 dagen op rij getraind',check:()=>calcSportStreak()>=3},
@@ -3870,6 +3892,13 @@ function restoreDashOrder(){
 
 // ===== PATCHNOTES =====
 const PATCHNOTES=[
+  {versie:'v2.8.0',datum:'2 april 2026',items:[
+    'Dashboard drag & drop — sleep secties naar eigen volgorde, wordt onthouden',
+    'Water herinnering — notificatie elke 2 uur als app open is, aan/uit in Instellingen',
+    'Firebase beveiligingsstappen — stap-voor-stap uitleg in Instellingen',
+    'Grappige gewichtsmijlpalen als badges — 1kg=suiker, 5kg=rugzak, 10kg=hond, 15kg=bureaustoel, 20kg=kettlebell',
+    'Meer gewichts-badges: 2kg en tussenstappen toegevoegd in Prestaties',
+  ]},
   {versie:'v2.7.0',datum:'2 april 2026',items:[
     'AI motivatie quote — dagelijkse persoonlijke quote op dashboard via Claude',
     'BMI zone op gewichtsgrafiek — groene band tussen BMI 18.5 en 25',
@@ -4517,6 +4546,119 @@ function slaanReflectieOp(btn){
   showToast('✅ Weekreflectie opgeslagen!');
   haptic(50);
   btn.closest('[style*=fixed]').remove();
+}
+
+// ===== WATER HERINNERING (#20) =====
+let waterReminderInterval=null;
+function toggleWaterReminder(){
+  const tog=document.getElementById('tog-water-reminder');
+  const on=tog?.checked;
+  localStorage.setItem('tracker_water_reminder',on?'1':'0');
+  if(on){
+    Notification.requestPermission().then(perm=>{
+      if(perm==='granted'){
+        startWaterReminder();
+        document.getElementById('water-reminder-status').textContent='✓ Actief — je krijgt elke 2 uur een herinnering als je open hebt';
+      } else {
+        if(tog) tog.checked=false;
+        localStorage.setItem('tracker_water_reminder','0');
+        document.getElementById('water-reminder-status').textContent='⚠️ Notificaties geweigerd — sta ze toe in je browserinstellingen';
+      }
+    });
+  } else {
+    stopWaterReminder();
+    document.getElementById('water-reminder-status').textContent='';
+  }
+}
+function startWaterReminder(){
+  stopWaterReminder();
+  waterReminderInterval=setInterval(()=>{
+    const goal=parseInt(loadSettings().waterdoel)||8;
+    const filled=getWaterToday();
+    if(filled<goal&&Notification.permission==='granted'){
+      new Notification('💧 Mijn Welzijn — Water herinnering',{
+        body:`Je hebt vandaag ${filled} van ${goal} glazen gedronken. Pak een glas water!`,
+        icon:'/mijn-welzijn/icon-192.png'
+      });
+    }
+  },2*60*60*1000);
+}
+function stopWaterReminder(){
+  if(waterReminderInterval){clearInterval(waterReminderInterval);waterReminderInterval=null;}
+}
+function initWaterReminder(){
+  const aan=localStorage.getItem('tracker_water_reminder')==='1';
+  const tog=document.getElementById('tog-water-reminder');
+  if(tog) tog.checked=aan;
+  if(aan&&Notification.permission==='granted') startWaterReminder();
+  const st=document.getElementById('water-reminder-status');
+  if(st&&aan) st.textContent='✓ Actief — je krijgt elke 2 uur een herinnering als je open hebt';
+}
+
+// ===== DRAG & DROP DASHBOARD (#16) =====
+const DASH_VOLGORDE_KEY='tracker_dash_volgorde';
+const DASH_SECTIES=['dash-row2','dash-row3','dash-water-card','dash-mijlpalen'];
+let dragSrc=null;
+
+function initDragDrop(){
+  const rows=document.querySelectorAll('#view-dashboard .gap-section[id], #view-dashboard > .gap-section');
+  rows.forEach(el=>{
+    if(el.id==='meldingen-rij'||el.id==='dash-stat-row') return;
+    el.classList.add('dash-draggable');
+    // Voeg sleepgreep toe
+    if(!el.querySelector('.dash-drag-handle')){
+      const h=document.createElement('div');
+      h.className='dash-drag-handle';h.title='Versleep sectie';h.textContent='⠿';
+      el.style.position='relative';
+      el.appendChild(h);
+    }
+    el.setAttribute('draggable','true');
+    el.addEventListener('dragstart',e=>{
+      dragSrc=el;el.classList.add('dash-dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    el.addEventListener('dragend',()=>{
+      el.classList.remove('dash-dragging');
+      document.querySelectorAll('.dash-drag-over').forEach(x=>x.classList.remove('dash-drag-over'));
+      slaanDashVolgorde();
+    });
+    el.addEventListener('dragover',e=>{
+      e.preventDefault();e.dataTransfer.dropEffect='move';
+      if(dragSrc&&dragSrc!==el) el.classList.add('dash-drag-over');
+    });
+    el.addEventListener('dragleave',()=>el.classList.remove('dash-drag-over'));
+    el.addEventListener('drop',e=>{
+      e.preventDefault();el.classList.remove('dash-drag-over');
+      if(!dragSrc||dragSrc===el) return;
+      const parent=el.parentNode;
+      const nodes=[...parent.children];
+      const srcIdx=nodes.indexOf(dragSrc);
+      const tgtIdx=nodes.indexOf(el);
+      if(srcIdx<tgtIdx) parent.insertBefore(dragSrc,el.nextSibling);
+      else parent.insertBefore(dragSrc,el);
+    });
+  });
+}
+
+function slaanDashVolgorde(){
+  const parent=document.getElementById('view-dashboard');
+  if(!parent) return;
+  const ids=[...parent.querySelectorAll('.gap-section[id]')].map(el=>el.id);
+  localStorage.setItem(DASH_VOLGORDE_KEY,JSON.stringify(ids));
+}
+
+function herstellenDashVolgorde(){
+  const saved=localStorage.getItem(DASH_VOLGORDE_KEY);
+  if(!saved) return;
+  try{
+    const ids=JSON.parse(saved);
+    const parent=document.getElementById('view-dashboard');
+    if(!parent) return;
+    ids.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el&&el.parentNode===parent) parent.appendChild(el);
+    });
+  }catch{}
 }
 
 // ===== SAVE POP =====
@@ -5706,6 +5848,7 @@ function renderDashboard(){
   updateQuickWaterCount();
   renderDashSlaapChart();
   renderQuote();
+  setTimeout(initDragDrop,100);
 }
 
 // ===== VISIBILITY TOGGLES =====
@@ -5801,6 +5944,9 @@ async function init(){
   applyDarkMode();
   applyCompact();
   setupPWA();
+  initWaterReminder();
+  herstellenDashVolgorde();
+  setTimeout(initDragDrop, 500);
 
   // Push altijd naar Firebase als de pagina gesloten wordt
   window.addEventListener('beforeunload',()=>{
