@@ -904,7 +904,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div id="last-sync-time" style="font-size:.62rem;color:rgba(255,255,255,.28);padding:0 14px 4px;min-height:14px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v2.0.0</div>
+    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.0.0 ↑</div>
   </div>
 </aside>
 
@@ -2963,6 +2963,108 @@ function restoreDashOrder(){
   }catch(e){}
 }
 
+// ===== PATCHNOTES =====
+const PATCHNOTES=[
+  {versie:'v2.0.0',datum:'2 april 2026',items:[
+    'Dagelijkse check-in met streak en +5 XP bonus',
+    'Inactief alarm — melding als je 2-5 dagen niks gelogd hebt',
+    'Haptic feedback bij opslaan op Android',
+    'Slaap labels altijd boven de grafieklijn zichtbaar (requestAnimationFrame fix)',
+    'Slaap labels clampen netjes binnen de grafiekgrenzen',
+    'Dashboard slaap grafiek toont t/m gisteren (niet vandaag)',
+    'Sync-timer versneld: 2500ms → 800ms',
+    'Laatste sync-tijd zichtbaar linksonder in zijbalk',
+    'Handmatige ☁ Sync knop rechtsboven in dashboard',
+    'beforeunload push — data altijd gesynchroniseerd bij sluiten browser',
+    'Pull-timeout verhoogd naar 8 seconden voor trage mobiele verbindingen',
+  ]},
+  {versie:'v1.9.1',datum:'2 april 2026',items:[
+    'Firebase auto-sync bij elke invoer',
+    'Laadoverlay wacht op Firebase data voor render',
+    'PWA icoon — eigen bordeaux W logo bij "Voeg toe aan beginscherm"',
+    'Doeldatum herberekening toont kg/week tempo en dagen te gaan',
+  ]},
+  {versie:'v1.9.0',datum:'1 april 2026',items:[
+    'Maanddoelen — sport en gewicht doelen per maand instellen',
+    'Uitdaging delen via native share of klembord',
+    'XP float animatie bij opslaan',
+    'Level-up overlay met ring-animatie',
+    'Compact modus voor mobiel',
+    'Voltooide uitdagingen — klik op "Vorige weken" voor historisch overzicht',
+  ]},
+  {versie:'v1.8.0',datum:'1 april 2026',items:[
+    'Wekelijkse uitdagingen tabblad',
+    'Level en XP systeem op basis van alle activiteiten',
+    'XP gids — overzicht hoe punten verdiend worden',
+    'Uitdagingen toegevoegd aan mobiel meer-menu',
+  ]},
+  {versie:'v1.7.0',datum:'1 april 2026',items:[
+    'PWA meta tags voor installatie op telefoon',
+    'Donker thema toggle linksonder in zijbalk',
+    'Geanimeerde statistieken — getallen tellen omhoog',
+    'popCard animatie bij kaarten na invoer',
+  ]},
+  {versie:'v1.6.0',datum:'31 maart 2026',items:[
+    'Terugkerende trainingen — auto-invullen op vaste dagen',
+    'Mijn motivatie — zichtbaar op dashboard',
+    'Firebase auto-sync gebouwd, configuratie hardcoded',
+    'Voortgang tijdlijn horizontaal in Gewicht-tab',
+    'Maandoverzicht verwijderd uit Gewicht-tab',
+  ]},
+  {versie:'v1.5.0',datum:'30 maart 2026',items:[
+    'Heatmap kalender in Prestaties-tab (sport/gewicht/slaap)',
+    'Mijlpalen tijdlijn op dashboard',
+    'Maandoverzicht gewicht grafiek',
+    'Voortgang tijdlijn in Gewicht-tab',
+    'Instellingen layout gefixed',
+    'Mobiele navigatiebalk onderaan',
+    'FAB knop met bottom sheet snel-invoer',
+  ]},
+  {versie:'v1.4.0',datum:'28 maart 2026',items:[
+    'Volledig nieuw 3-kolom dashboard layout',
+    'Streaks naast elkaar in grid',
+    'Weekdoel + BMI naast elkaar',
+    'Sport + water naast elkaar onderaan',
+    'Dark mode met toggle',
+    'Datum invoer bij gewicht op dashboard',
+  ]},
+];
+
+function toonPatchnotes(){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9995;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+
+  const panel=document.createElement('div');
+  panel.style.cssText='background:var(--cream);border-radius:20px;padding:24px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;position:relative';
+
+  panel.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-family:var(--font-head);font-size:1.3rem;color:var(--text)">Mijn <em>Welzijn</em> — Patchnotes</div>
+      <button onclick="this.closest('.patchnotes-overlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.3rem;color:var(--text-muted);padding:4px 8px">✕</button>
+    </div>
+    ${PATCHNOTES.map((p,i)=>`
+      <div style="margin-bottom:20px${i>0?';opacity:.75':''}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-family:var(--font-head);font-size:1rem;font-weight:700;color:var(--burgundy)">${p.versie}</span>
+          <span style="font-size:.72rem;color:var(--text-muted);background:var(--parchment);padding:2px 8px;border-radius:999px;border:1px solid var(--border)">${p.datum}</span>
+          ${i===0?'<span style="font-size:.68rem;font-weight:700;background:var(--gold-pale);color:var(--gold);padding:2px 8px;border-radius:999px;border:1px solid var(--gold-light)">NIEUW</span>':''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          ${p.items.map(item=>`
+            <div style="display:flex;align-items:flex-start;gap:8px;font-size:.82rem;color:var(--text-soft)">
+              <span style="color:var(--gold);flex-shrink:0;margin-top:1px">•</span>
+              <span>${item}</span>
+            </div>`).join('')}
+        </div>
+        ${i<PATCHNOTES.length-1?'<div style="height:1px;background:var(--border-light);margin-top:16px"></div>':''}
+      </div>`).join('')}`;
+
+  overlay.className='patchnotes-overlay';
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+}
+
 // ===== HAPTIC FEEDBACK (#3) =====
 function haptic(patroon){
   if(navigator.vibrate) navigator.vibrate(patroon||50);
@@ -3428,44 +3530,42 @@ function deleteSlaap(id){
 function drawSlaapLabels(chartId, dataPoints){
   const chart=charts[chartId];
   if(!chart) return;
-  const ctx=chart.ctx;
-  const meta=chart.getDatasetMeta(0);
-  const canvasW=chart.canvas.width;
-  const canvasH=chart.canvas.height;
-  ctx.save();
-  meta.data.forEach((point,i)=>{
-    const v=dataPoints[i]?.uren||dataPoints[i];
-    if(!v) return;
-    const x=point.x, y=point.y;
-    const label=v+'u';
-    const pad={x:7,y:4};
-    ctx.font='600 11px Nunito, sans-serif';
-    const tw=ctx.measureText(label).width;
-    const bw=tw+pad.x*2, bh=18+pad.y;
-    // Clamp zodat box nooit buiten canvas valt
-    let bx=x-bw/2;
-    let by=y-bh-10;
-    bx=Math.max(chart.chartArea.left, Math.min(bx, chart.chartArea.right-bw));
-    by=Math.max(2, Math.min(by, canvasH-bh-2));
-    // box
-    const col=slaapColor(v);
-    ctx.fillStyle=col+'22';
-    ctx.strokeStyle=col+'88';
-    ctx.lineWidth=1;
-    const r=6;
-    ctx.beginPath();
-    ctx.moveTo(bx+r,by);ctx.lineTo(bx+bw-r,by);ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+r);
-    ctx.lineTo(bx+bw,by+bh-r);ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh);
-    ctx.lineTo(bx+r,by+bh);ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-r);
-    ctx.lineTo(bx,by+r);ctx.quadraticCurveTo(bx,by,bx+r,by);
-    ctx.closePath();
-    ctx.fill();ctx.stroke();
-    // text
-    ctx.fillStyle=col;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(label,bx+bw/2,by+bh/2);
+  requestAnimationFrame(()=>{
+    const ctx=chart.ctx;
+    const meta=chart.getDatasetMeta(0);
+    const canvasH=chart.canvas.height;
+    const areaL=chart.chartArea.left;
+    const areaR=chart.chartArea.right;
+    ctx.save();
+    meta.data.forEach((point,i)=>{
+      const v=dataPoints[i]?.uren||dataPoints[i];
+      if(!v) return;
+      const x=point.x, y=point.y;
+      const label=v+'u';
+      const pad={x:7,y:4};
+      ctx.font='600 11px Nunito, sans-serif';
+      const tw=ctx.measureText(label).width;
+      const bw=tw+pad.x*2, bh=18+pad.y;
+      let bx=Math.max(areaL, Math.min(x-bw/2, areaR-bw));
+      let by=Math.max(2, y-bh-10);
+      const col=slaapColor(v);
+      ctx.fillStyle=col+'22';
+      ctx.strokeStyle=col+'88';
+      ctx.lineWidth=1;
+      const r=6;
+      ctx.beginPath();
+      ctx.moveTo(bx+r,by);ctx.lineTo(bx+bw-r,by);ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+r);
+      ctx.lineTo(bx+bw,by+bh-r);ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh);
+      ctx.lineTo(bx+r,by+bh);ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-r);
+      ctx.lineTo(bx,by+r);ctx.quadraticCurveTo(bx,by,bx+r,by);
+      ctx.closePath();
+      ctx.fill();ctx.stroke();
+      ctx.fillStyle=col;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(label,bx+bw/2,by+bh/2);
+    });
+    ctx.restore();
   });
-  ctx.restore();
 }
 
 // ===== QUICK ADD SLAAP (dashboard) =====
