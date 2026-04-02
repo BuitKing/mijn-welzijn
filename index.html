@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mijn Welzijn">
+<meta name="theme-color" content="#7a3030">
+<link id="apple-touch-icon" rel="apple-touch-icon">
 <title>Mijn Welzijn</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -868,7 +873,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
   <div class="sidebar-footer">
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v1.6.0</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em">v1.7.0</div>
   </div>
 </aside>
 
@@ -2698,6 +2703,62 @@ function checkHerhaling(){
   },1200);
 }
 
+// ===== PWA SETUP (#32) =====
+function setupPWA(){
+  // Teken icoon op canvas
+  function maakIcon(size){
+    const c=document.createElement('canvas');
+    c.width=c.height=size;
+    const ctx=c.getContext('2d');
+    const r=size*0.18;
+    // Bordeaux achtergrond met afgeronde hoeken
+    ctx.fillStyle='#7a3030';
+    ctx.beginPath();
+    ctx.moveTo(r,0);ctx.lineTo(size-r,0);ctx.quadraticCurveTo(size,0,size,r);
+    ctx.lineTo(size,size-r);ctx.quadraticCurveTo(size,size,size-r,size);
+    ctx.lineTo(r,size);ctx.quadraticCurveTo(0,size,0,size-r);
+    ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);
+    ctx.closePath();ctx.fill();
+    // Goud "W" letter
+    ctx.fillStyle='#c8954a';
+    ctx.font=`bold ${size*.52}px Georgia,serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('W',size/2,size*.48);
+    // Klein goud stipje als accent
+    ctx.fillStyle='#e8ba76';
+    ctx.beginPath();ctx.arc(size*.62,size*.3,size*.06,0,Math.PI*2);ctx.fill();
+    return c.toDataURL('image/png');
+  }
+
+  const icon192=maakIcon(192);
+  const icon512=maakIcon(512);
+
+  // Apple touch icoon instellen
+  const ati=document.getElementById('apple-touch-icon');
+  if(ati) ati.href=icon192;
+
+  // Manifest aanmaken als blob
+  const manifest={
+    name:'Mijn Welzijn',
+    short_name:'Welzijn',
+    description:'Persoonlijk welzijn tracker — gewicht, sport, water & slaap',
+    start_url:'/',
+    display:'standalone',
+    background_color:'#fdf6ee',
+    theme_color:'#7a3030',
+    orientation:'portrait-primary',
+    icons:[
+      {src:icon192,sizes:'192x192',type:'image/png',purpose:'any maskable'},
+      {src:icon512,sizes:'512x512',type:'image/png',purpose:'any maskable'}
+    ]
+  };
+  const blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('link');
+  link.rel='manifest';link.href=url;
+  document.head.appendChild(link);
+}
+
 // ===== COUNT-UP ANIMATIE (#32) =====
 function countUp(el,target,duration=800,suffix=''){
   if(!el||isNaN(target)) return;
@@ -3744,28 +3805,49 @@ function renderVoortgang(){
   else               motivatie='Voeg metingen toe om je voortgang te zien.';
   motivEl.textContent=motivatie;
 
-  // Einddatum voorspelling via lineaire trend (minimaal 3 metingen)
-  if(gData.length>=3&&nog>0){
-    // Bereken gemiddeld gewichtsverlies per dag over laatste 14 metingen
-    const recent=gData.slice(-14);
+  // Einddatum voorspelling — gebruik laatste 4 metingen voor meest recente tempo
+  if(gData.length>=2&&nog>0){
+    const recent=gData.slice(-Math.min(gData.length,4));
     const days=(new Date(recent[recent.length-1].datum)-new Date(recent[0].datum))/(1000*60*60*24);
     const verliesPerDag=days>0?(recent[0].val-recent[recent.length-1].val)/days:0;
+    const verliesPerWeek=verliesPerDag*7;
+
     if(verliesPerDag>0){
       const dagenNodig=Math.ceil(nog/verliesPerDag);
       const einddatum=new Date();
       einddatum.setDate(einddatum.getDate()+dagenNodig);
       const formatted=einddatum.toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'});
-      predictEl.innerHTML=`📅 Op dit tempo bereik je je doel rond <strong>${formatted}</strong> (±${dagenNodig} dagen)`;
+      const tempoStr=verliesPerWeek.toFixed(2).replace('.',',');
+      predictEl.innerHTML=`
+        <div style="display:flex;flex-direction:column;gap:6px;width:100%">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:.78rem;color:var(--text-soft)">📅 Verwachte doeldatum:</span>
+            <strong style="color:var(--text)">${formatted}</strong>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="background:var(--sage-pale);color:var(--sage);border:1px solid var(--sage-light);border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:700">
+              ${tempoStr} kg/week
+            </span>
+            <span style="background:var(--parchment);color:var(--text-muted);border:1px solid var(--border);border-radius:999px;padding:2px 10px;font-size:.72rem">
+              ${dagenNodig} dagen te gaan
+            </span>
+          </div>
+        </div>`;
       footer.style.display='flex';
     } else if(verliesPerDag<0){
-      predictEl.innerHTML='📈 Huidig gewicht stijgt — pas je strategie aan.';
+      const stijgPerWeek=Math.abs(verliesPerDag*7).toFixed(2).replace('.',',');
+      predictEl.innerHTML=`
+        <div>
+          <span style="background:var(--rose-pale);color:var(--rose);border:1px solid var(--rose-light);border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:700">+${stijgPerWeek} kg/week</span>
+          <span style="font-size:.78rem;color:var(--text-soft);margin-left:8px">Gewicht stijgt — pas je strategie aan.</span>
+        </div>`;
       footer.style.display='flex';
     } else {
-      predictEl.innerHTML='➡️ Gewicht stabiel — meer activiteit of aanpassing nodig.';
+      predictEl.innerHTML='<span style="font-size:.78rem;color:var(--text-soft)">➡️ Gewicht stabiel — meer activiteit of aanpassing nodig.</span>';
       footer.style.display='flex';
     }
   } else if(pct>=100){
-    predictEl.innerHTML='🏆 Doel bereikt!';
+    predictEl.innerHTML='<span style="background:var(--sage-pale);color:var(--sage);border-radius:999px;padding:4px 14px;font-size:.82rem;font-weight:700">🏆 Doel bereikt!</span>';
     footer.style.display='flex';
   } else {
     footer.style.display=motivatie?'flex':'none';
@@ -4008,6 +4090,7 @@ async function init(){
   initHeatmap();
   applyDarkMode();
   applyCompact();
+  setupPWA();
 
   // Laad-overlay tonen
   const overlay=document.getElementById('init-overlay');
