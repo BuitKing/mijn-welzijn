@@ -935,11 +935,8 @@ html.dark .mob-sheet{background:var(--card-bg);}
       </div>
     </div>
 
-    <!-- Check-in kaart -->
-    <div id="checkin-banner" class="gap-section" style="display:none"></div>
-
-    <!-- Inactief alarm -->
-    <div id="inactief-banner" class="gap-section" style="display:none"></div>
+    <!-- Meldingen rij: check-in + inactief naast elkaar -->
+    <div id="meldingen-rij" class="gap-section" style="display:none;gap:12px"></div>
 
     <!-- Row 1: stat cards compact -->
     <div class="gap-section" id="dash-stat-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
@@ -3218,9 +3215,51 @@ function haptic(patroon){
 }
 
 // ===== INACTIEF ALARM (#1) =====
+// ===== DAGELIJKSE CHECK-IN =====
+function loadCheckin(){
+  try{return JSON.parse(localStorage.getItem('tracker_checkin'))||{streak:0,best:0,last:''};} catch{return{streak:0,best:0,last:''};}}
+function saveCheckin(d){localStorage.setItem('tracker_checkin',JSON.stringify(d));}
+function doCheckin(){
+  const data=loadCheckin();
+  const gisteren=new Date();gisteren.setDate(gisteren.getDate()-1);
+  const gisterenStr=gisteren.toISOString().slice(0,10);
+  const newStreak=data.last===gisterenStr?data.streak+1:1;
+  const newBest=Math.max(data.best,newStreak);
+  const updated={streak:newStreak,best:newBest,last:todayStr()};
+  saveCheckin(updated);
+  haptic([50,30,80]);
+  showXPFloat(5,'meldingen-rij');
+  checkLevelUp();
+  triggerAutoSync();
+  window._checkinHtml='';window._inactiefHtml='';
+  renderInactiefAlarm();renderCheckin();
+  showToast('🔥 Ingecheckt! Streak: '+newStreak+' dagen — +5 XP');
+}
+
+// Centrale render voor meldingen rij
+function renderMeldingenRij(){
+  window._checkinHtml='';
+  window._inactiefHtml='';
+  renderInactiefAlarm();
+  renderCheckin(); // renderCheckin calls renderMeldingenRij at end
+  // Combineer in één rij
+  const rij=document.getElementById('meldingen-rij');
+  if(!rij) return;
+  const checkinHtml=window._checkinHtml||'';
+  const inactiefHtml=window._inactiefHtml||'';
+  const beiden=checkinHtml&&inactiefHtml;
+  if(!checkinHtml&&!inactiefHtml){
+    rij.style.display='none';return;
+  }
+  rij.style.display='flex';
+  rij.style.flexWrap='wrap';
+  rij.style.gap='12px';
+  rij.innerHTML=
+    (checkinHtml?`<div style="flex:1;min-width:${beiden?'280px':'100%'}">${checkinHtml}</div>`:'') +
+    (inactiefHtml?`<div style="flex:1;min-width:${beiden?'280px':'100%'}">${inactiefHtml}</div>`:'');
+}
+
 function renderInactiefAlarm(){
-  const banner=document.getElementById('inactief-banner');
-  if(!banner) return;
   const gData=load(KEYS.gewicht);
   const sData=load(KEYS.sport);
   const slData=load(KEYS.slaap);
@@ -3230,82 +3269,48 @@ function renderInactiefAlarm(){
   const laS=sData.length>0?sData[sData.length-1].datum:null;
   const laSl=slData.length>0?slData[slData.length-1].datum:null;
   const meldingen=[];
-  if(gData.length>0&&dagenGeleden(laG)>=3)
+  // Gewicht: pas na 7 dagen (1 week)
+  if(gData.length>0&&dagenGeleden(laG)>=7)
     meldingen.push({icon:'⚖️',tekst:`${dagenGeleden(laG)} dagen geen gewicht gelogd`,tab:'gewicht'});
   if(sData.length>0&&dagenGeleden(laS)>=5)
-    meldingen.push({icon:'🏃',tekst:`${dagenGeleden(laS)} dagen geen training geregistreerd`,tab:'sport'});
+    meldingen.push({icon:'🏃',tekst:`${dagenGeleden(laS)} dagen geen training`,tab:'sport'});
   if(slData.length>0&&dagenGeleden(laSl)>=2)
     meldingen.push({icon:'😴',tekst:`${dagenGeleden(laSl)} dagen geen slaap gelogd`,tab:'slaap'});
-  if(!meldingen.length){banner.style.display='none';return;}
-  banner.style.display='block';
-  banner.innerHTML=`<div style="background:var(--sky-pale);border:1.5px solid var(--sky);border-radius:var(--radius);padding:12px 16px;display:flex;flex-direction:column;gap:8px">
-    <div style="font-size:.75rem;font-weight:700;color:var(--sky);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Even bijhouden 📋</div>
-    ${meldingen.map(m=>`<div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:1.1rem">${m.icon}</span>
-      <span style="flex:1;font-size:.82rem;color:var(--text-soft)">${m.tekst}</span>
-      <button onclick="switchTab('${m.tab}')" style="background:var(--sky);color:#fff;border:none;border-radius:999px;padding:4px 12px;font-size:.72rem;cursor:pointer;white-space:nowrap">Invullen →</button>
+  if(!meldingen.length){window._inactiefHtml='';return;}
+  window._inactiefHtml=`<div style="background:var(--sky-pale);border:1.5px solid var(--sky);border-radius:var(--radius);padding:10px 14px;display:flex;flex-direction:column;gap:7px;height:100%">
+    <div style="font-size:.72rem;font-weight:700;color:var(--sky);text-transform:uppercase;letter-spacing:.06em">Even bijhouden 📋</div>
+    ${meldingen.map(m=>`<div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:1rem">${m.icon}</span>
+      <span style="flex:1;font-size:.78rem;color:var(--text-soft)">${m.tekst}</span>
+      <button onclick="switchTab('${m.tab}')" style="background:var(--sky);color:#fff;border:none;border-radius:999px;padding:3px 10px;font-size:.7rem;cursor:pointer;white-space:nowrap">Invullen →</button>
     </div>`).join('')}
   </div>`;
 }
 
-// ===== DAGELIJKSE CHECK-IN (#1) =====
-function loadCheckin(){
-  try{return JSON.parse(localStorage.getItem('tracker_checkin'))||{streak:0,best:0,last:''};}
-  catch{return{streak:0,best:0,last:''};}
-}
-function saveCheckin(d){localStorage.setItem('tracker_checkin',JSON.stringify(d));}
-
-function doCheckin(){
-  const data=loadCheckin();
-  const gisteren=new Date();gisteren.setDate(gisteren.getDate()-1);
-  const gisterenStr=gisteren.toISOString().slice(0,10);
-  // Streak bewaren als gisteren was ingecheckt, anders opnieuw beginnen
-  const newStreak=data.last===gisterenStr?data.streak+1:1;
-  const newBest=Math.max(data.best,newStreak);
-  const updated={streak:newStreak,best:newBest,last:todayStr()};
-  saveCheckin(updated);
-  haptic([50,30,80]);
-  // XP beloning
-  showXPFloat(5,'checkin-banner');
-  checkLevelUp();
-  triggerAutoSync();
-  renderCheckin();
-  showToast('🔥 Ingecheckt! Streak: '+newStreak+' dagen — +5 XP');
-}
-
 function renderCheckin(){
-  const banner=document.getElementById('checkin-banner');
-  if(!banner) return;
   const data=loadCheckin();
   const vandaagIngecheckt=data.last===todayStr();
-
   if(vandaagIngecheckt){
-    banner.style.display='block';
-    banner.innerHTML=`<div class="checkin-done">
+    window._checkinHtml=`<div class="checkin-done" style="height:100%;min-height:40px">
       <span style="font-size:1.2rem">✅</span>
-      <span>Vandaag ingecheckt — streak: <strong>${data.streak} dag${data.streak!==1?'en':''}</strong></span>
-      <span style="margin-left:auto;font-size:.72rem;color:var(--sage-light)">Beste: ${data.best} dagen</span>
+      <span style="font-size:.82rem">Vandaag ingecheckt — streak: <strong>${data.streak} dag${data.streak!==1?'en':''}</strong></span>
+      <span style="margin-left:auto;font-size:.7rem;color:var(--sage-light)">Beste: ${data.best} dagen</span>
     </div>`;
   } else {
-    banner.style.display='block';
     const gisteren=new Date();gisteren.setDate(gisteren.getDate()-1);
     const streakActief=data.last===gisteren.toISOString().slice(0,10);
     const streakNum=streakActief?data.streak:0;
-    const msgs=['Druk op de knop om je dag te starten!',
-      'Elke dag telt — check in en bouw je streak!',
-      'Jij kan dit — laat die streak groeien!',
-      'Nog niet ingecheckt vandaag — doe het nu!'];
-    const msg=msgs[new Date().getDay()%msgs.length];
-    banner.innerHTML=`<div class="checkin-card">
-      <div class="checkin-fire">${streakNum>=7?'🏆':streakNum>=3?'🔥':'⚡'}</div>
+    window._checkinHtml=`<div class="checkin-card" style="padding:12px 16px">
+      <div class="checkin-fire" style="font-size:1.6rem">${streakNum>=7?'🏆':streakNum>=3?'🔥':'⚡'}</div>
       <div class="checkin-info">
-        <div class="checkin-streak">${streakNum} dag${streakNum!==1?'en':''}</div>
-        <div class="checkin-sub">huidige streak${data.best>0?' · beste: '+data.best+' dagen':''}</div>
-        <div class="checkin-msg">${msg}</div>
+        <div class="checkin-streak" style="font-size:1.3rem">${streakNum} dag${streakNum!==1?'en':''}</div>
+        <div class="checkin-sub" style="font-size:.7rem">huidige streak${data.best>0?' · beste: '+data.best:''}
+        </div>
       </div>
-      <button class="checkin-btn-main" onclick="doCheckin()">+5 XP · Inchecken</button>
+      <button class="checkin-btn-main" style="padding:8px 16px;font-size:.8rem" onclick="doCheckin()">+5 XP · Inchecken</button>
     </div>`;
   }
+  renderMeldingenRij();
 }
 
 // ===== PWA SETUP (#32) =====
@@ -4608,8 +4613,10 @@ function renderDashboard(){
 
   document.getElementById('streak-water').textContent=calcWaterStreak();
   document.getElementById('streak-sport').textContent=calcSportStreak();
-  renderCheckin();
+  window._checkinHtml='';
+  window._inactiefHtml='';
   renderInactiefAlarm();
+  renderCheckin(); // renderCheckin calls renderMeldingenRij at end
   renderBMI(latest);
   renderVoortgang();
   renderMijlpalen();
