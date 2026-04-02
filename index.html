@@ -3444,7 +3444,7 @@ function drawSlaapLabels(chartId, dataPoints){
     // Clamp zodat box nooit buiten canvas valt
     let bx=x-bw/2;
     let by=y-bh-10;
-    bx=Math.max(2, Math.min(bx, canvasW-bw-2));
+    bx=Math.max(chart.chartArea.left, Math.min(bx, chart.chartArea.right-bw));
     by=Math.max(2, Math.min(by, canvasH-bh-2));
     // box
     const col=slaapColor(v);
