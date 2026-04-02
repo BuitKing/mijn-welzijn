@@ -4344,62 +4344,81 @@ function toonChallengeHistory(){
 
 // ===== AI MOTIVATIE QUOTE (#2) =====
 let lastQuoteDatum='';
-async function renderAIMotivatie(){
+// ===== DAGELIJKSE MOTIVATIE QUOTE (#2) =====
+const MOTIVATIE_QUOTES=[
+  // Volhouden & consistentie
+  'Elke dag een beetje beter is genoeg.',
+  'Kleine stappen leiden naar grote veranderingen.',
+  'Consistentie verslaat motivatie elke keer.',
+  'Vandaag is de volgende kans om te kiezen voor jezelf.',
+  'Het gaat niet om perfectie, maar om vooruitgang.',
+  'Jij bent de som van alles wat je elke dag doet.',
+  'Eén goede keuze vandaag bouwt op de gisteren.',
+  'Goed genoeg is beter dan helemaal niet.',
+  'De weg van duizend kilometer begint met één stap.',
+  'Morgen dankbaar zijn voor wat je vandaag doet.',
+  // Bewegen & sport
+  'Je lichaam kan het, overtuig je hoofd.',
+  'Beweging is geen straf, het is een cadeau aan jezelf.',
+  'Na het sporten heb je er nog nooit spijt van gehad.',
+  'Elke training telt, ook de korte.',
+  'Jij bent sterker dan je gisteren was.',
+  'Sport is de beste investering in morgen.',
+  'Zet je schoenen aan, de rest volgt vanzelf.',
+  // Slaap & herstel
+  'Rust is geen luiheid, het is herstel.',
+  'Goed slapen is net zo belangrijk als goed trainen.',
+  'Een uitgerust hoofd maakt betere keuzes.',
+  'Herstel is deel van de vooruitgang.',
+  // Gewicht & voeding
+  'Gezondheid is niet een getal op de weegschaal.',
+  'Je lichaam verdient brandstof, geen straf.',
+  'Hydratatie is de simpelste stap die je kunt zetten.',
+  'Water is je beste vriend vandaag.',
+  'Wat je vandaag eet, voel je morgen.',
+  // Mindset
+  'Vergelijk jezelf alleen met wie je gisteren was.',
+  'Elk nieuw begin start met één beslissing.',
+  'Trots zijn op jezelf kost niets — doe het vaker.',
+  'Je hoeft niet gemotiveerd te zijn, alleen te beginnen.',
+  'Houd vol, ook als het moeilijk voelt.',
+  'Vertrouw op het proces, ook als je het niet ziet.',
+  'Goede gewoonten bouwen zichzelf op.',
+  'De beste dag om te starten was gisteren, de op één na beste is nu.',
+  'Jij hebt dit al eerder volgehouden — je kunt het opnieuw.',
+  // Positief & luchtig
+  'Vandaag is een nieuwe kans, pak hem.',
+  'Je doet het al — gewoon blijven doen.',
+  'Elke meting is informatie, geen oordeel.',
+  'Succes is de opeenstapeling van kleine overwinningen.',
+  'Je bent verder dan je denkt.',
+  'Wees lief voor jezelf, je bent al onderweg.',
+];
+
+function renderAIMotivatie(){
   const el=document.getElementById('dash-motivatie');
   if(!el) return;
 
-  // Max 1x per dag ophalen
+  // Zelfde quote de hele dag via datum als seed
   const vandaag=todayStr();
   const cached=localStorage.getItem('tracker_ai_quote');
   if(cached){
     try{
       const obj=JSON.parse(cached);
       if(obj.datum===vandaag){
-        el.textContent=obj.quote;
-        el.style.display='block';
+        el.textContent='✨ '+obj.quote;
         return;
       }
     }catch{}
   }
 
-  // Bouw context op basis van data
-  const gData=load(KEYS.gewicht);
-  const sData=load(KEYS.sport);
-  const slData=load(KEYS.slaap);
-  const s=loadSettings();
-  const naam=s.naam||'Joost';
-  const latest=gData.length?gData[gData.length-1].val:null;
-  const doel=s.doelgewicht;
-  const trainingen=sData.filter(x=>weekKey(x.datum)===weekKey(todayStr())).length;
-  const gemSlaap=slData.slice(-7).length?
-    (slData.slice(-7).reduce((a,x)=>a+x.uren,0)/slData.slice(-7).length).toFixed(1):null;
+  // Kies quote op basis van datum (deterministisch per dag)
+  const datumHash=vandaag.replace(/-/g,'').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const idx=datumHash%MOTIVATIE_QUOTES.length;
+  const quote=MOTIVATIE_QUOTES[idx];
 
-  const ctx=`Naam: ${naam}. ${latest?`Huidig gewicht: ${latest}kg.`:''}${doel?` Doel: ${doel}kg.`:''} Trainingen deze week: ${trainingen}. ${gemSlaap?`Gem. slaap: ${gemSlaap}u.`:''}`;
-
-  try{
-    el.textContent='💭 Even nadenken...';
-    el.style.display='block';
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:120,
-        messages:[{role:'user',content:`Geef een korte (max 1 zin, max 15 woorden) persoonlijke motiverende quote voor: ${ctx}. Varieer de toon. Geen aanhalingstekens. Geen naam erin. Alleen de zin, niets anders.`}]
-      })
-    });
-    const data=await res.json();
-    const quote=data.content?.[0]?.text?.trim();
-    if(quote){
-      el.textContent='✨ '+quote;
-      el.style.display='block';
-      localStorage.setItem('tracker_ai_quote',JSON.stringify({datum:vandaag,quote:'✨ '+quote}));
-    } else {
-      el.style.display='none';
-    }
-  }catch(e){
-    el.style.display='none';
-  }
+  el.textContent='✨ '+quote;
+  localStorage.setItem('tracker_ai_quote',JSON.stringify({datum:vandaag,quote}));
 }
 
 // ===== SLAAPSCHULD (#19) =====
