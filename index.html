@@ -932,7 +932,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div id="last-sync-time" style="font-size:.62rem;color:rgba(255,255,255,.28);padding:0 14px 4px;min-height:14px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.1.0 ↑</div>
+    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v2.5.0 ↑</div>
   </div>
 </aside>
 
@@ -2403,8 +2403,9 @@ function lblPlugin(getClr){
 
 const base={responsive:true,maintainAspectRatio:false,
   plugins:{legend:{display:false}},animation:{duration:0},
+  layout:{padding:{top:20,left:10,right:10,bottom:8}},
   scales:{
-    x:{grid:{display:false},ticks:{font:{size:9},color:'#b89880',maxRotation:45,autoSkip:true,maxTicksLimit:16}},
+    x:{grid:{display:false},ticks:{font:{size:9},color:'#b89880',maxRotation:45,autoSkip:true,maxTicksLimit:16,padding:8}},
     y:{grid:{color:'#f5ede4'},ticks:{font:{size:9},color:'#b89880'}}
   }};
 
@@ -2412,7 +2413,7 @@ ${gData.length>0?`
 new Chart(document.getElementById('cGew'),{type:'line',
   data:{labels:${gLabels},datasets:[{data:${gVals},borderColor:'#c8954a',borderWidth:2,
     pointBackgroundColor:'#c8954a',pointRadius:5,tension:0.35,fill:true,backgroundColor:'#c8954a14'}]},
-  options:{...base,layout:{padding:{top:20,left:10,right:10}},
+  options:{...base,
     scales:{x:base.scales.x,y:{...base.scales.y,min:${gMin},max:${gMax},
       ticks:{...base.scales.y.ticks,callback:v=>v+' kg'}}}},
   plugins:[lblPlugin('#7a3030')]});`:''}
@@ -2423,7 +2424,7 @@ const slKlr=${slKleuren};
 new Chart(document.getElementById('cSlaap'),{type:'line',
   data:{labels:${slLabels},datasets:[{data:slVals,borderColor:'#7a9e7e',borderWidth:2,
     pointBackgroundColor:slKlr,pointRadius:5,tension:0.35,fill:true,backgroundColor:'#7a9e7e14'}]},
-  options:{...base,layout:{padding:{top:20,left:10,right:10}},
+  options:{...base,
     scales:{x:base.scales.x,y:{...base.scales.y,min:0,max:13,
       ticks:{...base.scales.y.ticks,callback:v=>v+'u'}}}},
   plugins:[lblPlugin(v=>v<6?'#e74c3c':v<=8?'#c8954a':'#7a9e7e')]});`:''}
@@ -2432,7 +2433,7 @@ ${wData.length>0?`
 new Chart(document.getElementById('cWater'),{type:'line',
   data:{labels:${wLabels},datasets:[{data:${wVals},borderColor:'#7a9e7e',borderWidth:2,
     pointBackgroundColor:'#7a9e7e',pointRadius:5,tension:0.35,fill:true,backgroundColor:'#7a9e7e14'}]},
-  options:{...base,layout:{padding:{top:20,left:10,right:10}},
+  options:{...base,
     scales:{x:base.scales.x,y:{...base.scales.y,beginAtZero:true,suggestedMax:${Math.max(wMax,3).toFixed(1)}}}},
   plugins:[lblPlugin('#7a9e7e')]});`:''}
 
@@ -2442,7 +2443,7 @@ const cKlr=${cKleuren};
 new Chart(document.getElementById('cCola'),{type:'line',
   data:{labels:${cLabels},datasets:[{data:cVals,borderColor:'#c0392b',borderWidth:2,
     pointBackgroundColor:cKlr,pointRadius:5,tension:0.35,fill:true,backgroundColor:'#c0392b14'}]},
-  options:{...base,layout:{padding:{top:20,left:10,right:10}},
+  options:{...base,
     scales:{x:base.scales.x,y:{...base.scales.y,beginAtZero:true,suggestedMax:${Math.max(cMax,3).toFixed(1)}}}},
   plugins:[lblPlugin(v=>v>${cDoel}?'#7b241c':'#c0392b')]});`:''}
 
@@ -3784,6 +3785,44 @@ function restoreDashOrder(){
 
 // ===== PATCHNOTES =====
 const PATCHNOTES=[
+  {versie:'v2.5.0',datum:'2 april 2026',items:[
+    'Volledig rapport export verbeterd: grafieken onder elkaar over volledige breedte',
+    'Heatmap sport: dagnummer in elke cel, leesbare kleur per achtergrond',
+    'Water en cola grafiek: Y-as schaalt naar 1.25× hoogste waarde',
+    'Gewicht labels: kg verwijderd van punten, alleen nog op Y-as',
+    'Slaap labels: u verwijderd van punten, eerste en laatste label niet meer afgeknipt',
+    'Klachten in rapport per dag gegroepeerd, lege dagen weggelaten',
+    'Klachten sectie verdwijnt volledig als er geen klachten in de periode zijn',
+  ]},
+  {versie:'v2.4.0',datum:'2 april 2026',items:[
+    'Volledig rapport: bordeaux header met naam, periode en Mijn Welzijn badge',
+    'Rapport: lijngrafieken voor gewicht en slaap met gekleurde datapunten',
+    'Rapport: sport heatmap met drie groentinten op trainingsintensiteit',
+    'Rapport: water en cola als lijngrafieken met zichtbare labels per dag',
+    'Rapport: klachtenlog per dag met ernst-badges en notities',
+    'Klachten tab: export voor arts als printbare HTML pagina',
+    'Klachten tab onder Slaap geplaatst in navigatie',
+  ]},
+  {versie:'v2.3.0',datum:'2 april 2026',items:[
+    'Klachten tab toegevoegd met keuzemenu van 12 klacht-categorieën',
+    'Ernst kiezen per klacht: Licht / Matig / Flink / Ernstig',
+    'Datum en begintijd invoer bij klacht',
+    'Klachten log met statistieken per klacht type',
+    'Cola tracker: glas cola bijhouden naast water op dashboard en Drinken tab',
+    'Over-doel cola glazen krijgen pulserende rode kleur en waarschuwingsmelding',
+    'Drinken tab hernoemd van Water, cola grafiek toegevoegd',
+    'Water menu in navigatie hernoemd naar Drinken met 🥤 icoon',
+  ]},
+  {versie:'v2.2.0',datum:'2 april 2026',items:[
+    'Inactief alarm: melding bij gewicht ≥7 dagen, sport ≥5 dagen, slaap ≥2 dagen',
+    'Check-in en inactief alarm naast elkaar op 50/50 breedte op dashboard',
+    'Als één melding wegvalt neemt de andere automatisch de volle breedte',
+    'Haptic feedback bij opslaan op Android (trilling)',
+    'Infinite loop opgelost bij renderMeldingenRij',
+    'Slaap labels altijd boven de lijn via requestAnimationFrame',
+    'Slaap labels clampen binnen chartArea links en rechts',
+    'Dashboard slaap grafiek toont t/m gisteren',
+  ]},
   {versie:'v2.1.0',datum:'2 april 2026',items:[
     'Cola tracker toegevoegd naast water — glazen bijhouden met eigen grafiek',
     'Water tab hernoemd naar Drinken met water + cola grafieken naast elkaar',
