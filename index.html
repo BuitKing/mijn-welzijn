@@ -1020,7 +1020,7 @@ html.dark .mob-sheet{background:var(--card-bg);}
     <div id="autosync-indicator" style="font-size:.68rem;color:rgba(255,255,255,.4);padding:4px 14px 2px;min-height:18px"></div>
     <div id="last-sync-time" style="font-size:.62rem;color:rgba(255,255,255,.28);padding:0 14px 4px;min-height:14px"></div>
     <div class="sidebar-quote" id="sidebar-quote">Elke dag een beetje beter. 🌸</div>
-    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v3.0.1 ↑</div>
+    <div onclick="toonPatchnotes()" style="font-size:.6rem;color:rgba(255,255,255,.25);padding:4px 14px 8px;letter-spacing:.06em;cursor:pointer;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">v3.1.0 ↑</div>
   </div>
 </aside>
 
@@ -1393,9 +1393,78 @@ html.dark .mob-sheet{background:var(--card-bg);}
         <div class="mm-detail" id="mm-detail" style="display:none"></div>
       </div>
     </div>
-  </div>
+    <!-- Lichaamssamenstelling sectie -->
+    <div class="gap-section" id="view-lichaam">
+      <div class="card">
+        <div class="card-head-row" style="margin-bottom:14px">
+          <div class="card-label">🧬 Lichaamssamenstelling</div>
+          <button class="btn secondary" style="padding:6px 14px;font-size:.78rem" onclick="toggleLichaamForm()">＋ Meting toevoegen</button>
+        </div>
 
-  <!-- ===== SPORT ===== -->
+        <!-- Invoerformulier -->
+        <div id="lichaam-add-form" style="display:none;margin-bottom:16px">
+          <div class="input-row" style="margin-bottom:10px">
+            <div class="input-group">
+              <label>Datum</label>
+              <input type="date" id="lc-datum">
+            </div>
+            <div class="input-group">
+              <label>Lichaamsvet (%)</label>
+              <input type="number" id="lc-vet" placeholder="bijv. 32.5" step="0.1" min="1" max="70">
+            </div>
+            <div class="input-group">
+              <label>Visceraal vet (niveau)</label>
+              <input type="number" id="lc-visceraal" placeholder="bijv. 12" step="1" min="1" max="30">
+            </div>
+          </div>
+          <div class="input-row" style="margin-bottom:12px">
+            <div class="input-group">
+              <label>Spiermassa (kg)</label>
+              <input type="number" id="lc-spier" placeholder="bijv. 58.2" step="0.1" min="10" max="150">
+            </div>
+            <div class="input-group">
+              <label>Lichaamswater (%)</label>
+              <input type="number" id="lc-water" placeholder="bijv. 48.5" step="0.1" min="20" max="80">
+            </div>
+            <div class="input-group">
+              <label>Notitie (optioneel)</label>
+              <input type="text" id="lc-notitie" placeholder="bijv. na ontbijt">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn" onclick="addLichaamsMeting()" style="flex:1;padding:10px">Opslaan</button>
+            <button class="btn secondary" onclick="toggleLichaamForm()" style="padding:10px 16px">Annuleer</button>
+          </div>
+        </div>
+
+        <!-- Grafieken 2x2 -->
+        <div class="grid-2" style="gap:14px;margin-bottom:14px" id="lichaam-charts-wrap">
+          <div>
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px">Lichaamsvet %</div>
+            <div class="chart-wrap" style="height:140px"><canvas id="lcVetChart"></canvas></div>
+          </div>
+          <div>
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px">Spiermassa (kg)</div>
+            <div class="chart-wrap" style="height:140px"><canvas id="lcSpierChart"></canvas></div>
+          </div>
+          <div>
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px">Visceraal vet (niveau)</div>
+            <div class="chart-wrap" style="height:140px"><canvas id="lcVisceraalChart"></canvas></div>
+          </div>
+          <div>
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px">Lichaamswater %</div>
+            <div class="chart-wrap" style="height:140px"><canvas id="lcWaterChart"></canvas></div>
+          </div>
+        </div>
+        <div id="lichaam-leeg" style="font-size:.82rem;color:var(--text-muted);font-style:italic;display:none">Nog geen metingen — voeg een meting toe via de knop hierboven.</div>
+
+        <!-- Log -->
+        <div class="divider"></div>
+        <div class="section-title" style="margin-bottom:10px">Metinggeschiedenis</div>
+        <div id="lichaam-log" class="log-list" style="max-height:320px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
   <div class="view" id="view-sport">
     <div class="page-header">
       <div><div class="page-title">🏃 <em>Sport</em></div><div class="page-subtitle">Trainingen bijhouden</div></div>
@@ -3068,6 +3137,7 @@ function renderGewicht(){
       plugins:[bmiPlugin]});
   }
   renderMeetmomentTijdlijn();
+  renderLichaamssamenstelling();
 }
 
 // ===== SPORT =====
@@ -4277,6 +4347,13 @@ function restoreDashOrder(){
 
 // ===== PATCHNOTES =====
 const PATCHNOTES=[
+  {versie:'v3.1.0',datum:'2 april 2026',items:[
+    'Lichaamssamenstelling sectie toegevoegd aan Gewicht tab',
+    'Invoer voor lichaamsvet %, visceraal vet niveau, spiermassa kg en lichaamswater %',
+    'Vier afzonderlijke grafieken per meting in 2x2 grid',
+    'Metinggeschiedenis log met alle waarden per datum',
+    'Lichaamssamenstelling data gesynchroniseerd via Firebase',
+  ]},
   {versie:'v3.0.1',datum:'2 april 2026',items:[
     'Dubbele mobiele navigatiebalk verwijderd — was de oorzaak van veel mobiele inconsistenties',
     'Dubbele mobiele CSS blokken opgeruimd',
@@ -5601,7 +5678,116 @@ function renderChallenges(){
 }
 
 // ===== VOORTGANG TIJDLIJN (#11) =====
-const KEYS_MM='tracker_meetmomenten';
+// ===== LICHAAMSSAMENSTELLING =====
+const KEYS_LICHAAM='tracker_lichaam';
+function loadLichaam(){try{return JSON.parse(localStorage.getItem(KEYS_LICHAAM))||[];}catch{return[];}}
+function saveLichaam(d){localStorage.setItem(KEYS_LICHAAM,JSON.stringify(d));}
+
+function toggleLichaamForm(){
+  const f=document.getElementById('lichaam-add-form');
+  if(!f) return;
+  const open=f.style.display==='block';
+  f.style.display=open?'none':'block';
+  if(!open) document.getElementById('lc-datum').value=todayStr();
+}
+
+function addLichaamsMeting(){
+  const datum=document.getElementById('lc-datum').value||todayStr();
+  const vet=parseFloat(document.getElementById('lc-vet').value)||null;
+  const visceraal=parseFloat(document.getElementById('lc-visceraal').value)||null;
+  const spier=parseFloat(document.getElementById('lc-spier').value)||null;
+  const water=parseFloat(document.getElementById('lc-water').value)||null;
+  const notitie=document.getElementById('lc-notitie').value.trim();
+  if(!vet&&!visceraal&&!spier&&!water){showToast('⚠️ Vul minimaal één waarde in');return;}
+  const data=loadLichaam();
+  const idx=data.findIndex(x=>x.datum===datum);
+  const entry={datum,vet,visceraal,spier,water,notitie};
+  if(idx>=0) data[idx]=entry; else data.push(entry);
+  data.sort((a,b)=>a.datum.localeCompare(b.datum));
+  saveLichaam(data);
+  ['lc-vet','lc-visceraal','lc-spier','lc-water','lc-notitie'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('lichaam-add-form').style.display='none';
+  renderLichaamssamenstelling();
+  showToast('🧬 Lichaamssamenstelling opgeslagen!');
+  haptic(50);
+  triggerAutoSync();
+}
+
+function deleteLichaamsMeting(datum){
+  saveLichaam(loadLichaam().filter(x=>x.datum!==datum));
+  renderLichaamssamenstelling();
+  triggerAutoSync();
+}
+
+function renderLichaamssamenstelling(){
+  const data=loadLichaam();
+  const leeg=document.getElementById('lichaam-leeg');
+  const wrap=document.getElementById('lichaam-charts-wrap');
+  const log=document.getElementById('lichaam-log');
+  if(!log) return;
+
+  if(!data.length){
+    if(leeg) leeg.style.display='block';
+    if(wrap) wrap.style.display='none';
+    log.innerHTML='';
+    ['lcVetChart','lcSpierChart','lcVisceraalChart','lcWaterChart'].forEach(id=>destroyChart(id));
+    return;
+  }
+  if(leeg) leeg.style.display='none';
+  if(wrap) wrap.style.display='grid';
+
+  const labels=data.map(x=>fmtDate(x.datum));
+  const cfg=chartDefaults();
+  const baseLine=(kleur,vals,yLabel)=>({
+    type:'line',
+    data:{labels,datasets:[{data:vals,borderColor:kleur,borderWidth:2,
+      pointBackgroundColor:kleur,pointRadius:4,tension:0.35,
+      fill:true,backgroundColor:kleur+'18',
+      spanGaps:true}]},
+    options:{...cfg,scales:{...cfg.scales,
+      y:{...cfg.scales.y,beginAtZero:false,
+        ticks:{...cfg.scales.y.ticks,callback:v=>v+(yLabel||'')}}}}
+  });
+
+  destroyChart('lcVetChart');
+  if(data.some(x=>x.vet)){
+    const el=document.getElementById('lcVetChart');
+    if(el) charts['lcVetChart']=new Chart(el.getContext('2d'),baseLine('#e07b54',data.map(x=>x.vet||null),'%'));
+  }
+  destroyChart('lcSpierChart');
+  if(data.some(x=>x.spier)){
+    const el=document.getElementById('lcSpierChart');
+    if(el) charts['lcSpierChart']=new Chart(el.getContext('2d'),baseLine('#7a9e7e',data.map(x=>x.spier||null),' kg'));
+  }
+  destroyChart('lcVisceraalChart');
+  if(data.some(x=>x.visceraal)){
+    const el=document.getElementById('lcVisceraalChart');
+    if(el) charts['lcVisceraalChart']=new Chart(el.getContext('2d'),baseLine('#c47a7a',data.map(x=>x.visceraal||null),''));
+  }
+  destroyChart('lcWaterChart');
+  if(data.some(x=>x.water)){
+    const el=document.getElementById('lcWaterChart');
+    if(el) charts['lcWaterChart']=new Chart(el.getContext('2d'),baseLine('#6aadcf',data.map(x=>x.water||null),'%'));
+  }
+
+  // Log
+  log.innerHTML=[...data].reverse().map(x=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-light)">
+      <div style="flex:1">
+        <div style="font-size:.85rem;font-weight:700;color:var(--text)">${fmtDate(x.datum)}</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+          ${x.vet!=null?`<span style="font-size:.75rem;color:var(--text-muted)">🔶 Vet: <strong>${x.vet}%</strong></span>`:''}
+          ${x.spier!=null?`<span style="font-size:.75rem;color:var(--text-muted)">💪 Spier: <strong>${x.spier} kg</strong></span>`:''}
+          ${x.visceraal!=null?`<span style="font-size:.75rem;color:var(--text-muted)">⚠️ Visceraal: <strong>${x.visceraal}</strong></span>`:''}
+          ${x.water!=null?`<span style="font-size:.75rem;color:var(--text-muted)">💧 Water: <strong>${x.water}%</strong></span>`:''}
+        </div>
+        ${x.notitie?`<div style="font-size:.73rem;color:var(--text-muted);font-style:italic;margin-top:2px">"${x.notitie}"</div>`:''}
+      </div>
+      <button onclick="deleteLichaamsMeting('${x.datum}')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:.85rem;padding:4px 8px">✕</button>
+    </div>`).join('');
+}
+
+// ===== MEETMOMENTEN =====
 function loadMM(){try{return JSON.parse(localStorage.getItem(KEYS_MM))||{};}catch{return{};}}
 function saveMM(d){localStorage.setItem(KEYS_MM,JSON.stringify(d));}
 let mmSelected=null;
@@ -6367,7 +6553,7 @@ async function init(){
     const payload=JSON.stringify({
       gewicht:load(KEYS.gewicht),sport:load(KEYS.sport),
       water:load(KEYS.water),slaap:load(KEYS.slaap),
-      meetmomenten:loadMM(),cola:JSON.parse(localStorage.getItem('tracker_cola')||'[]'),klachten:loadKlachten(),settings:loadSettings()
+      meetmomenten:loadMM(),cola:JSON.parse(localStorage.getItem('tracker_cola')||'[]'),klachten:loadKlachten(),lichaam:loadLichaam(),settings:loadSettings()
     });
     // sendBeacon is betrouwbaarder bij sluiten browser
     navigator.sendBeacon(`${url}/welzijn/${user}.json?method=PUT`,
